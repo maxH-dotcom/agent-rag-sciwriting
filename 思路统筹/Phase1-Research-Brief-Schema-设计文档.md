@@ -48,6 +48,22 @@ Analysis ──────┘        │
 | 编辑粒度 | 字段级编辑 | 安全，不破坏 Schema |
 | 验证机制 | Pydantic Schema 验证 | 确保数据类型正确 |
 | Audit Trail | 节点+人工操作+变更 | 完整可追溯 |
+| 数据文件粒度 | 单表优先 | MVP 不处理多 sheet 选择 |
+| 变量角色抽取 | 轻量抽取 | 仅覆盖主效应问题，不覆盖复杂控制项解析 |
+| 变量类型判定 | 人工/描述优先 | MVP 不做严格自动推断 |
+
+### 2.1 MVP 数据假设
+
+Research_Brief 是节点间共享的数据契约，因此需要把当前系统能力边界显式固化到 Schema 使用约定中：
+
+1. `research_goal` 默认可以映射为一个主问题。
+   - 典型格式是“`X 对 Y 的影响`”或“`Y 与 X 的关系`”。
+   - 多自变量、控制变量、交互项、机制链路等复合语义暂不要求自动拆解入 Schema。
+2. `data_summary` 默认描述单个主表。
+   - MVP 以单 sheet CSV 为稳定输入。
+   - 若用户上传多 sheet Excel，Schema 可以记录文件存在，但不假设系统已经完成 sheet 选择。
+3. `column_types` 在 MVP 中只表示基础列类型或用户确认后的分析类型。
+   - 不承诺仅靠自动检测区分连续变量、二值变量、计数变量。
 
 ---
 
@@ -195,7 +211,7 @@ class DataSummary(BaseModel):
     total_columns: int = Field(default=0, ge=0)
     column_types: dict = Field(
         default_factory=dict,
-        description="列名到类型的映射"
+        description="列名到基础类型/人工确认分析类型的映射"
     )
     panel_structure: Optional[PanelStructure] = Field(
         default=None,
@@ -214,13 +230,43 @@ class DataSummary(BaseModel):
         description="异常值列"
     )
 
+    # 新增字段（2026-04-04）：用户确认的变量映射
+    variable_mapping: Optional[VariableMapping] = Field(
+        default=None,
+        description="用户确认的变量映射关系"
+    )
+
+
+class VariableMapping(BaseModel):
+    """变量映射（新增，2026-04-04）"""
+
+    dependent_var: str = Field(
+        description="因变量 (Y)"
+    )
+    independent_vars: List[str] = Field(
+        default_factory=list,
+        description="自变量 (X) 列表"
+    )
+    control_vars: List[str] = Field(
+        default_factory=list,
+        description="控制变量列表"
+    )
+    entity_column: str = Field(
+        default="",
+        description="地区/个体列（面板数据）"
+    )
+    time_column: str = Field(
+        default="",
+        description="时间列（面板数据）"
+    )
+
 
 class DataFile(BaseModel):
     """数据文件"""
 
     file_id: str
     file_name: str
-    file_type: str  # "xlsx" | "csv" | "xls"
+    file_type: str  # MVP 推荐 "csv"；"xlsx" | "xls" 仅记录上传格式
     file_path: str
     size_bytes: int
 
@@ -236,10 +282,54 @@ class PanelStructure(BaseModel):
     time_periods: int = Field(default=0, description="时间期数")
 
 
+# ===== TransferContext（新增，2026-04-04）=====
+
+class TransferContext(BaseModel):
+    """
+    迁移上下文（新增字段）
+
+    记录方法从原文献迁移到用户研究场景的完整上下文。
+    来源：Novelty Node 的 transfer_assessments + recommended_direction。
+    """
+
+    source_method: str = Field(
+        description="来源方法名称"
+    )
+    source: str = Field(
+        description="来源描述，如 '长江流域碳排放研究（文献A）'"
+    )
+    transfer_feasibility: str = Field(
+        description="迁移可行性：'高' / '中' / '低'"
+    )
+    transfer_feasibility_reason: str = Field(
+        description="可行性判断理由"
+    )
+    required_adaptations: List[str] = Field(
+        default_factory=list,
+        description="需要做的适应性调整列表"
+    )
+    adaptation_risk: str | None = Field(
+        default=None,
+        description="调整风险点"
+    )
+    variable_mapping: dict = Field(
+        default_factory=dict,
+        description="从原方法变量到用户变量的映射关系"
+    )
+    combinable_methods: List[str] = Field(
+        default_factory=list,
+        description="可与哪些方法组合"
+    )
+    combination_benefit: str | None = Field(
+        default=None,
+        description="组合价值"
+    )
+
+
 # ===== MethodDecision =====
 
 class MethodDecision(BaseModel):
-    """方法决策"""
+    """方法决策（调整后，2026-04-04）"""
 
     recommended_models: List[str] = Field(
         default_factory=list,
@@ -261,6 +351,16 @@ class MethodDecision(BaseModel):
     robustness_checks: List[str] = Field(
         default_factory=list,
         description="稳健性检验建议"
+    )
+
+    # 新增字段（2026-04-04）
+    transfer_context: Optional[TransferContext] = Field(
+        default=None,
+        description="迁移上下文（从 Novelty Node 的推荐方向中获得）"
+    )
+    transfer_assessments: List[dict] = Field(
+        default_factory=list,
+        description="各方法的迁移评估结果（从 Novelty Node 获得）"
     )
 
 

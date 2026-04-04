@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Skill(gstack)",
-      "Skill(plan-eng-review)"
+      "Skill(plan-eng-review)",
+      "Bash(python3 -c ':*)",
+      "Bash(python3 tests/test_pipeline.py)",
+      "Bash(brew --version)",
+      "Bash(brew install:*)",
+      "Bash(python3.11 -m venv venv)",
+      "Bash(./venv/bin/pip install:*)",
+      "Bash(./venv/bin/python scripts/main.py)",
+      "Bash(./venv/bin/python -c \"from paperqa import Docs; help\\(Docs.query\\)\")",
+      "Bash(./venv/bin/python -c ':*)",
+      "Bash(./venv/bin/python -m pytest tests/test_pipeline.py -v)"
     ]
   }
 }

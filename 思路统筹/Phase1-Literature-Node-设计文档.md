@@ -12,30 +12,38 @@
 
 ### 1.1 Literature Node 定位
 
-Literature Node 是系统的**文献检索与证据聚合中心**，负责：
-- 为 Novelty Node 提供选题查重所需的文献证据
-- 为 Text-to-Code Bridge 提供方法依据和公式来源
-- 为后续节点提供结构化的文献元数据
+**调整说明（2026-04-04）**：Literature Node 是 Novelty Node 的**支撑节点**，而非独立决策节点。
+
+根据设计决策（方案B），Literature Node 的核心职责是：
+- 从文献中**提取方法元信息**（模型名称、文献来源、适用领域/地理上下文、数据要求）
+- 为 Novelty Node 提供结构化的方法证据包
+- 输出不包含判断——判断由 Novelty Node 完成
 
 ### 1.2 与其他节点的关系
 
 ```
                     ┌──────────────────┐
-                    │  Literature Node │
+                    │  Literature Node │  ← Novelty 的支撑节点
+                    └────────┬─────────┘
+                             │
+                             │ 结构化方法证据包（含迁移上下文）
+                             ▼
+                    ┌──────────────────┐
+                    │   Novelty Node   │  ← 主导节点：做迁移/组合/调整评估
                     └────────┬─────────┘
                              │
            ┌─────────────────┼─────────────────┐
            │                 │                 │
            ▼                 ▼                 ▼
     ┌──────────┐    ┌──────────────┐   ┌──────────────┐
-    │ Novelty   │    │ Text-to-Code │   │   Writing    │
-    │  Node     │    │   Bridge     │   │    Node      │
+    │ Analysis  │    │ Text-to-Code │   │   Writing    │
+    │   Node    │    │   Bridge     │   │    Node      │
     └──────────┘    └──────────────┘   └──────────────┘
 ```
 
 **数据流向**：
-- Literature Node 输出 `literature_result` 存入 MainState
-- Novelty Node 读取 `literature_result` 进行选题比对
+- Literature Node 输出 `literature_result`（含方法元信息和适用上下文）存入 MainState
+- Novelty Node 读取 `literature_result`，结合用户数据做迁移/组合/调整可行性评估
 - Text-to-Code Bridge 读取 `literature_result` 获取 evidence_package
 - Brief Builder 汇总 `literature_result` 到 Research_Brief
 
@@ -47,6 +55,7 @@ Literature Node 是系统的**文献检索与证据聚合中心**，负责：
 |--------|------|------|
 | Literature vs Novelty | 分离设计 | 各自独立，灵活组合 |
 | 检索优先级 | 本地优先，外部补充 | 减少外部依赖，提高相关性 |
+| 外部检索来源 | OpenAlex 默认源 | MVP 不额外接入 Semantic Scholar / arXiv 专用搜索 |
 | Metadata Store | SQLite | 轻量内嵌，无需运维 |
 | Node 输出 | 完整 evidence package | method_decision + references + metadata |
 | 文献索引 | 上传时自动索引 | 用户体验优先 |
@@ -77,11 +86,33 @@ class LiteratureChunk(BaseModel):
     relevance_score: float
 
 class MethodDecision(BaseModel):
-    """方法决策"""
+    """方法决策（已调整）"""
     recommended_methods: List[str]  # ["DID", "STIRPAT", "面板回归"]
-    rejected_methods: List[str]
-    reasoning: str
-    evidence_source_ids: List[str]  # 证据来源 chunk_id 列表
+    rejected_methods: List[str] = Field(default_factory=list)
+    reasoning: str = ""
+    evidence_source_ids: List[str] = Field(default_factory=list, description="证据来源 chunk_id 列表")
+
+
+class MethodMetadata(BaseModel):
+    """
+    方法元信息（新增，2026-04-04）
+
+    从文献中提取的每个方法的结构化信息，供 Novelty Node 做迁移/组合/调整评估。
+    """
+    method_name: str = Field(description="方法名称，如 'STIRPAT模型'、'DID双重差分'")
+    source_chunk_id: str = Field(description="来源文献 chunk_id")
+    source_file: str = Field(description="来源文献名称")
+    source_region: str | None = Field(default=None, description="文献研究的地理区域，如 '长江流域'、'浙江省'")
+    source_domain: str | None = Field(default=None, description="文献所属领域，如 '农业碳排放'、'环境经济学'")
+    data_structure: str | None = Field(default=None, description="文献使用的数据结构，如 '面板数据'、'截面数据'、'时间序列'")
+    variables: dict = Field(
+        default_factory=dict,
+        description="变量映射关系，格式：{'dependent': '...', 'independent': ['...'], 'control': ['...']}"
+    )
+    model_formula: str | None = Field(default=None, description="模型公式或核心计算逻辑")
+    adaptation_notes: str | None = Field(default=None, description="文献中提到的调整/扩展方向")
+    key_findings: str | None = Field(default=None, description="文献的主要发现（帮助判断迁移可行性）")
+    relevance_score: float = Field(default=0.5, ge=0.0, le=1.0, description="与用户研究目标的相关性评分")
 
 class Reference(BaseModel):
     """参考文献条目"""
@@ -104,8 +135,17 @@ class LiteratureResult(BaseModel):
     openalex_chunks: List[LiteratureChunk]  # 外部文献片段
     all_chunks: List[LiteratureChunk]  # 合并后的片段
 
-    # 方法决策
-    method_decision: MethodDecision
+    # 方法元信息（供 Novelty Node 做迁移评估）
+    method_metadata: List[MethodMetadata] = Field(
+        default_factory=list,
+        description="从文献中提取的方法元信息列表"
+    )
+
+    # 方法决策（已废弃，调整后仅保留推荐方法列表）
+    method_decision: MethodDecision = Field(
+        default_factory=MethodDecision,
+        description="推荐方法列表（Novelty Node 在此基础上做迁移评估）"
+    )
 
     # 参考文献
     references: List[Reference]
@@ -239,8 +279,8 @@ class LiteratureState(TypedDict):
 │  └──────────────────┘              │                              │
 │                                    ▼                              │
 │                         ┌──────────────────┐                   │
-│                         │ method_decision   │  ← LLM 生成        │
-│                         │ (LLM 分析)        │     方法建议       │
+│                         │ extract_metadata │  ← 提取方法元信息    │
+│                         │ (LLM 分析)       │     含迁移上下文     │
 │                         └────────┬─────────┘                   │
 │                                   │                              │
 │                                   ▼                              │
@@ -255,6 +295,11 @@ class LiteratureState(TypedDict):
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+**调整说明（2026-04-04）**：
+- `method_decision` 节点已调整为 `extract_metadata`，负责从文献片段中提取结构化的方法元信息
+- 输出包含：`method_name`、`source_region`、`source_domain`、`data_structure`、`variables`、`model_formula`、`adaptation_notes` 等字段
+- Novelty Node 接收这些元信息后，负责判断迁移/组合/调整的可行性
 
 ---
 
@@ -273,7 +318,8 @@ import asyncio
 class PaperQATool:
     """
     paper-qa 封装
-    提供文献检索和问答能力
+    提供本地已上传文献的检索和问答能力
+    不负责外部数据库发现；外部补充检索由 OpenAlexTool 完成
     """
 
     def __init__(self, docs_path: str = "./data/papers"):
@@ -312,6 +358,7 @@ class PaperQATool:
     ) -> List[dict]:
         """
         检索本地文献片段
+        作用域限定为 docs_path 下已经索引的用户文献
         """
         try:
             # 构建 paper-qa 查询
@@ -714,35 +761,50 @@ async def literature_node(state: MainState) -> MainState:
         literature_state["openalex_chunks"]
     )
 
-    # Step 4: 方法决策（LLM）
-    literature_state["status"] = "method_decision"
+    # Step 4: 提取方法元信息（LLM）—— 替代原来的 method_decision
+    # 调整说明（2026-04-04）：Literature 不做判断，只提取元信息供 Novelty 做迁移评估
+    literature_state["status"] = "extracting_metadata"
     llm = ChatOpenAI(model="gpt-4")
 
-    method_prompt = f"""
-    基于以下检索到的文献片段，分析适合的研究方法。
+    metadata_prompt = f"""
+    基于以下检索到的文献片段，提取每个方法的结构化元信息。
 
     用户查询：{query}
-    过滤条件：{filters}
 
     文献片段：
     {format_chunks_for_llm(literature_state['merged_chunks'][:10])}
 
     任务：
-    1. 推荐适合该研究问题的方法（可选多个）
-    2. 说明不推荐的方法（如有）
-    3. 给出推荐理由
+    对每个文献片段，提取以下信息（如果没有某字段则填 null）：
+    1. method_name: 方法名称（如 STIRPAT、DID、面板回归）
+    2. source_region: 文献研究的地理区域（如 长江流域、浙江省、全国）
+    3. source_domain: 文献所属领域（如 农业碳排放、环境经济学）
+    4. data_structure: 使用的数据结构（面板数据、截面数据、时间序列）
+    5. variables: 变量映射 {{"dependent": "因变量", "independent": ["自变量列表"], "control": ["控制变量"]}}
+    6. model_formula: 模型公式或核心计算逻辑（文字描述即可）
+    7. adaptation_notes: 文献中提到的调整/扩展方向
+    8. key_findings: 主要研究发现
 
     返回JSON格式：
+gee
     {{
-        "recommended_methods": ["方法1", "方法2"],
-        "rejected_methods": ["不推荐的方法"],
-        "reasoning": "推荐理由",
-        "evidence_source_ids": ["chunk_id列表"]
+        "method_metadata": [
+            {{
+                "method_name": "方法名",
+                "source_region": "区域或null",
+                "source_domain": "领域或null",
+                "data_structure": "数据结构或null",
+                "variables": {{}},
+                "model_formula": "公式描述或null",
+                "adaptation_notes": "调整说明或null",
+                "key_findings": "主要发现或null"
+            }}
+        ]
     }}
     """
 
-    method_response = await llm.ainvoke(method_prompt)
-    literature_state["method_decision"] = json.loads(method_response.content)
+    metadata_response = await llm.ainvoke(metadata_prompt)
+    literature_state["method_metadata"] = json.loads(metadata_response.content).get("method_metadata", [])
 
     # Step 5: 质量评估
     literature_state["status"] = "quality_evaluate"
@@ -768,6 +830,7 @@ async def literature_node(state: MainState) -> MainState:
             "local_chunks": literature_state["local_chunks"],
             "openalex_chunks": literature_state["openalex_chunks"],
             "all_chunks": literature_state["merged_chunks"],
+            "method_metadata": literature_state["method_metadata"],
             "method_decision": literature_state["method_decision"],
             "references": literature_state["references"],
             "total_local_hits": len(literature_state["local_chunks"]),

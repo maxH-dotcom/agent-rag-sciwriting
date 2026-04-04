@@ -39,6 +39,20 @@
 | 数据契约 | Research_Brief.json | 节点间唯一数据契约 |
 | 状态持久化 | Redis (CheckpointSaver) | 生产级断点续跑支持 |
 
+### 1.4 MVP 范围约束
+
+为避免在 Phase 0/1 过早引入复杂解析逻辑，MVP 明确限定以下边界：
+
+1. **研究问题解析**：当前只支持主效应导向的问题表达，默认模式为“单一因变量 + 少量自变量”。
+   - 例如 `"GDP 对 CO2 的影响"`、`"FDI 对碳排放的影响"` 属于 MVP 支持范围。
+   - 像 `"GDP and FDI jointly on CO2 controlling for trade openness"` 这类多自变量 + 控制变量的复合问题，暂不做自动变量角色拆解。
+2. **数据文件范围**：MVP 仅保证单 sheet 的表格输入能稳定工作，推荐上传单 sheet CSV。
+   - 多 sheet Excel 不做自动 sheet 选择，也不做跨 sheet 合并。
+3. **变量类型推断**：连续变量 / 二值变量 / 计数变量的自动识别在 MVP 阶段不做强推断。
+   - 当前依赖用户的自然语言描述、列名语义和人工确认。
+4. **paper-qa 检索边界**：paper-qa 在系统中默认承担本地已上传文献的检索与问答。
+   - 外部文献补充由 `pyopenalex` 完成，MVP 不额外定义 Semantic Scholar / arXiv 直连搜索策略。
+
 ---
 
 ## 二、系统架构
@@ -82,25 +96,26 @@
        pyopenalex
 ```
 
-### 2.2 五大任务节点
+### 2.2 五大任务节点（调整后，2026-04-04）
 
 | 节点 | 职责 | 输入 | 输出 |
 |------|------|------|------|
-| **Novelty Node** | 选题查重与创新判断 | 用户已有论文 + 本地文献 + 外部文献 | 重复点/区分点/推荐方向 |
-| **Literature Node** | 文献与方法依据检索 | 研究问题 + 关键词 | 方法依据包 + 参考文献候选 |
+| **Literature Node** | 文献检索 + 方法元信息提取 | 研究问题 + 关键词 | method_metadata（含迁移上下文） |
+| **Novelty Node** | 迁移/组合/调整可行性评估（决策节点） | Literature 的 method_metadata + 用户数据上下文 | transfer_assessments + 推荐方向（含迁移逻辑） |
 | **Analysis Node** | 数据分析与模型匹配 | 结构化数据 + 研究目标 | 模型推荐 + 分析代码 + 结果 |
-| **Brief Builder** | 汇总 Research_Brief | 前4个节点结果 | 结构化研究卡片 |
-| **Writing Node** | 生成论文提纲与草稿 | Research_Brief | 提纲 + 方法草稿 + 结果草稿 |
+| **Brief Builder** | 汇总 Research_Brief（含 transfer_context） | 前4个节点结果 | 结构化研究卡片 |
+| **Writing Node** | 生成论文提纲与草稿 | Research_Brief（含迁移上下文） | 提纲 + 方法草稿 + 结果草稿 |
 
-### 2.3 四个中断审核点
+### 2.3 四个中断审核点（调整后，2026-04-04）
 
 系统在关键节点暂停，等待人工确认后再继续：
 
 | 中断点 | 触发时机 | 用户决策 |
 |--------|----------|----------|
-| **Novelty 中断** | 选题方向确认 | 接受选题 / 修改方向 / 拒绝（终止任务） |
-| **Text-to-Code 中断** | 代码逻辑确认 | 执行代码 / 修改代码 / 跳过此步 |
-| **Brief Builder 中断** | Research_Brief 编辑 | 确认Brief / 直接修改JSON |
+| **数据映射中断（新增）** | 用户上传数据后自动解析 | 确认变量映射 / 修改映射 / 取消上传 |
+| **Novelty 中断** | 迁移/组合/调整评估完成（调整后内涵） | 确认迁移方向 / 修改方向 / 拒绝（终止任务） |
+| **Text-to-Code 中断** | 代码逻辑确认 + 适应性解释（新增） | 执行代码 / 修改代码 / 跳过此步 |
+| **Brief Builder 中断** | Research_Brief 编辑（含 transfer_context） | 确认Brief / 直接修改JSON |
 | **Writing 中断** | 草稿输出确认 | 接受草稿 / 修改 / 重新生成 |
 
 ### 2.4 项目目录结构
@@ -134,6 +149,9 @@ research-assistant/
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── config.py             # 配置管理
+│   │   ├── llm_config.py        # LLM 配置（持久化，多 provider）
+│   │   ├── mcp_config.py        # MCP Port 配置
+│   │   ├── mcp_client.py        # MCP Client 实现
 │   │   └── exceptions.py         # 异常定义
 │   └── main.py                  # FastAPI 入口
 │
@@ -152,7 +170,10 @@ research-assistant/
 │   │   ├── file-upload.tsx     # 文件上传组件
 │   │   ├── brief-editor.tsx     # Research Brief 编辑器
 │   │   ├── draft-viewer.tsx     # 草稿查看器
-│   │   └── evidence-panel.tsx   # 证据面板
+│   │   ├── evidence-panel.tsx   # 证据面板
+│   │   ├── llm-config.tsx      # LLM 配置面板
+│   │   ├── mcp-port-manager.tsx # MCP Port 管理
+│   │   └── interrupt-manager.tsx # 中断管理器
 │   └── tailwind.config.ts
 │
 ├── benchmark/                    # 评测基准
@@ -215,29 +236,51 @@ research-assistant/
 
 ### Phase 1：核心链路打通
 
-**目标**：5 个节点全部实现，4 个中断点完整，数据流贯通
+**目标**：5 个节点全部实现，5 个中断点完整，数据流贯通
 
 **前置条件**：Phase 0 验收通过
 
-#### Phase 1.1：完成剩余 4 个子图
+#### Phase 1.1：数据准备子图（新增）
 
-- [ ] Literature Subgraph（文献检索 + pyopenalex）
+- [ ] 数据文件解析（自动识别列名、数据类型）
+- [ ] 面板结构检测（地区列 + 年份列识别）
+- [ ] 变量映射 UI（用户选择因变量/自变量/控制变量）
+- [ ] 数据映射中断（Interrupt 0）
+
+#### Phase 1.2：完成剩余 4 个子图
+
+- [ ] Literature Subgraph（文献检索 + method_metadata 提取）
+- [ ] Novelty Subgraph（迁移/组合/调整评估）
 - [ ] Analysis Subgraph（DuckDB + Code Interpreter）
-- [ ] Brief Builder Subgraph（汇总 Research_Brief）
 - [ ] Writing Subgraph（生成提纲/草稿）
 
-#### Phase 1.2：Text-to-Code Bridge
+#### Phase 1.3：Text-to-Code Bridge
 
 - [ ] 强制前置逻辑（无 evidence 则拒绝生成）
 - [ ] 证据检索 → 代码生成 → 人工审核 → 执行
+- [ ] 适应性解释输出（adaptation_explanation）
 
-#### Phase 1.3：Research_Brief Schema + Builder
+#### Phase 1.4：Research_Brief Schema + Builder
 
-定义完整的数据契约格式，支持版本管理和人工编辑。
+定义完整的数据契约格式，支持版本管理和人工编辑（含 transfer_context）。
 
-#### Phase 1.4：完整 4 个中断点
+#### Phase 1.5：完整 5 个中断点
 
-所有中断点的前端 UI 和 API 处理。
+所有中断点的前端 UI 和 API 处理（含数据映射中断）。
+
+#### Phase 1.6：LLM 配置持久化
+
+- [ ] LLM 配置层（支持多 provider：OpenAI/Groq/DeepSeek/Kimi/Minimax/智谱/百川/千帆/Gemini/Anthropic/Ollama）
+- [ ] 配置文件持久化（~/.research_assistant/llm_config.json）
+- [ ] 前端 LLM 配置 UI
+
+#### Phase 1.7：MCP 集成
+
+- [ ] MCP 配置层（MCPConfig + MCPPortConfig）
+- [ ] MCP Client 实现
+- [ ] 内置 MCP Ports（学术搜索、Wolfram、图表渲染、数据清洗、翻译）
+- [ ] MCP 管理 API
+- [ ] 前端 MCP 管理 UI
 
 #### Phase 1.5：SSE 状态推送（替代轮询）
 
@@ -270,19 +313,19 @@ research-assistant/
 
 ## 四、核心数据结构
 
-### 4.1 MainState（LangGraph 状态）
+### 4.1 MainState（LangGraph 状态，调整后）
 
 ```python
 class MainState(TypedDict):
     # 任务标识
     task_id: str
     task_type: str  # "topic_novelty_check" | "model_recommendation" | "analysis" | "writing"
-    current_node: str  # "novelty" | "literature" | "analysis" | "brief" | "writing"
+    current_node: str  # "literature" | "novelty" | "analysis" | "brief" | "writing"
     status: str  # "pending" | "running" | "interrupted" | "done" | "error"
 
     # 各节点结果
-    novelty_result: dict | None
-    literature_result: dict | None
+    literature_result: dict | None  # 包含 method_metadata（新增）
+    novelty_result: dict | None     # 包含 transfer_assessments（调整）
     analysis_result: dict | None
     brief_result: dict | None
     writing_result: dict | None
@@ -298,44 +341,62 @@ class MainState(TypedDict):
     checkpoint_id: str
 ```
 
-### 4.2 Research_Brief.json（数据契约）
+### 4.2 Research_Brief.json（数据契约，调整后）
 
 ```json
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "task_type": "topic_novelty_check",
-  "research_goal": "判断浙江省农业碳排放新题目是否与已有论文重复",
+  "research_goal": "判断中东地区农业碳排放研究是否与已有论文重复",
 
   "novelty_position": {
-    "overlap_with_existing": ["C-F-E耦合协调模型", "驱动机制分析"],
-    "differentiation_points": ["趋势预测", "情景模拟"],
-    "suggested_topic_directions": ["基于ARIMA的短期预测", "Holt指数平滑法"]
+    "overlap_with_existing": ["使用STIRPAT模型", "长江流域碳排放研究"],
+    "differentiation_points": ["研究区域不同", "加入适应性调整"],
+    "suggested_topic_directions": [
+      "基于STIRPAT的中东地区农业碳排放预测（从长江流域迁移）"
+    ]
+  },
+
+  "transfer_context": {
+    "source_method": "STIRPAT模型",
+    "source": "长江流域碳排放研究（文献A）",
+    "transfer_feasibility": "高",
+    "transfer_feasibility_reason": "数据结构相似（均为面板数据），研究问题类型相同",
+    "required_adaptations": [
+      "变量映射：FDI → 能源消耗强度",
+      "控制变量调整：加入地形因素、灌溉方式"
+    ],
+    "adaptation_risk": "时间序列长度不足可能影响模型稳定性",
+    "variable_mapping": {"FDI": "能源消耗强度", "GDP": "农业产值"}
   },
 
   "data_summary": {
-    "file_name": "zhejiang_panel.xlsx",
-    "rows": 363,
-    "columns": ["city", "year", "gdp", "population", "co2"],
-    "diagnostic_notes": "面板数据，2000-2023年，11个地级市"
+    "file_name": "middle_east_agriculture.csv",
+    "rows": 300,
+    "columns": ["region", "year", "agri_output", "energy_consumption", "co2"],
+    "diagnostic_notes": "面板数据，2000-2023年，15个地区"
   },
 
   "method_decision": {
-    "recommended_model": "分项预测 + 排放核算",
-    "reason": "农业碳排放受多因素影响，需分项计算",
+    "recommended_model": "STIRPAT + LMDI组合",
+    "reason": "STIRPAT用于驱动因素分析，LMDI用于分解量化",
     "evidence_sources": ["chunk_101", "chunk_145"],
-    "rejected_models": ["LSTM黑箱预测", "单一Geodetector"]
+    "rejected_models": ["LSTM黑箱预测", "单一Geodetector"],
+    "transfer_context": { ... },
+    "transfer_assessments": [ ... ]
   },
 
   "analysis_outputs": {
     "code_script": "...",
     "execution_result": {},
     "charts": ["carbon_trend.png"],
-    "numerical_results": {}
+    "numerical_results": {},
+    "adaptation_explanation": "本代码将STIRPAT模型从长江流域迁移到中东地区..."
   },
 
   "evidence_map": {
     "claim_001": {
-      "text": "农业碳排放需分项核算",
+      "text": "STIRPAT模型适用于碳排放驱动因素分析",
       "source_chunk_id": "chunk_101",
       "source_file": "参考文献01.pdf"
     }
@@ -358,7 +419,7 @@ class MainState(TypedDict):
   ],
 
   "created_at": "2026-04-02T09:00:00Z",
-  "updated_at": "2026-04-02T10:00:00Z"
+  "updated_at": "2026-04-04T12:00:00Z"
 }
 ```
 
