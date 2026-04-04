@@ -1,0 +1,752 @@
+Metadata-Version: 2.4
+Name: fhlmi
+Version: 0.45.1
+Summary: A client to provide LLM responses for FutureHouse applications.
+Author-email: FutureHouse technical staff <hello@futurehouse.org>
+License:                                  Apache License
+                                   Version 2.0, January 2004
+                                http://www.apache.org/licenses/
+        
+           TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+        
+           1. Definitions.
+        
+              "License" shall mean the terms and conditions for use, reproduction,
+              and distribution as defined by Sections 1 through 9 of this document.
+        
+              "Licensor" shall mean the copyright owner or entity authorized by
+              the copyright owner that is granting the License.
+        
+              "Legal Entity" shall mean the union of the acting entity and all
+              other entities that control, are controlled by, or are under common
+              control with that entity. For the purposes of this definition,
+              "control" means (i) the power, direct or indirect, to cause the
+              direction or management of such entity, whether by contract or
+              otherwise, or (ii) ownership of fifty percent (50%) or more of the
+              outstanding shares, or (iii) beneficial ownership of such entity.
+        
+              "You" (or "Your") shall mean an individual or Legal Entity
+              exercising permissions granted by this License.
+        
+              "Source" form shall mean the preferred form for making modifications,
+              including but not limited to software source code, documentation
+              source, and configuration files.
+        
+              "Object" form shall mean any form resulting from mechanical
+              transformation or translation of a Source form, including but
+              not limited to compiled object code, generated documentation,
+              and conversions to other media types.
+        
+              "Work" shall mean the work of authorship, whether in Source or
+              Object form, made available under the License, as indicated by a
+              copyright notice that is included in or attached to the work
+              (an example is provided in the Appendix below).
+        
+              "Derivative Works" shall mean any work, whether in Source or Object
+              form, that is based on (or derived from) the Work and for which the
+              editorial revisions, annotations, elaborations, or other modifications
+              represent, as a whole, an original work of authorship. For the purposes
+              of this License, Derivative Works shall not include works that remain
+              separable from, or merely link (or bind by name) to the interfaces of,
+              the Work and Derivative Works thereof.
+        
+              "Contribution" shall mean any work of authorship, including
+              the original version of the Work and any modifications or additions
+              to that Work or Derivative Works thereof, that is intentionally
+              submitted to Licensor for inclusion in the Work by the copyright owner
+              or by an individual or Legal Entity authorized to submit on behalf of
+              the copyright owner. For the purposes of this definition, "submitted"
+              means any form of electronic, verbal, or written communication sent
+              to the Licensor or its representatives, including but not limited to
+              communication on electronic mailing lists, source code control systems,
+              and issue tracking systems that are managed by, or on behalf of, the
+              Licensor for the purpose of discussing and improving the Work, but
+              excluding communication that is conspicuously marked or otherwise
+              designated in writing by the copyright owner as "Not a Contribution."
+        
+              "Contributor" shall mean Licensor and any individual or Legal Entity
+              on behalf of whom a Contribution has been received by Licensor and
+              subsequently incorporated within the Work.
+        
+           2. Grant of Copyright License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              copyright license to reproduce, prepare Derivative Works of,
+              publicly display, publicly perform, sublicense, and distribute the
+              Work and such Derivative Works in Source or Object form.
+        
+           3. Grant of Patent License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              (except as stated in this section) patent license to make, have made,
+              use, offer to sell, sell, import, and otherwise transfer the Work,
+              where such license applies only to those patent claims licensable
+              by such Contributor that are necessarily infringed by their
+              Contribution(s) alone or by combination of their Contribution(s)
+              with the Work to which such Contribution(s) was submitted. If You
+              institute patent litigation against any entity (including a
+              cross-claim or counterclaim in a lawsuit) alleging that the Work
+              or a Contribution incorporated within the Work constitutes direct
+              or contributory patent infringement, then any patent licenses
+              granted to You under this License for that Work shall terminate
+              as of the date such litigation is filed.
+        
+           4. Redistribution. You may reproduce and distribute copies of the
+              Work or Derivative Works thereof in any medium, with or without
+              modifications, and in Source or Object form, provided that You
+              meet the following conditions:
+        
+              (a) You must give any other recipients of the Work or
+                  Derivative Works a copy of this License; and
+        
+              (b) You must cause any modified files to carry prominent notices
+                  stating that You changed the files; and
+        
+              (c) You must retain, in the Source form of any Derivative Works
+                  that You distribute, all copyright, patent, trademark, and
+                  attribution notices from the Source form of the Work,
+                  excluding those notices that do not pertain to any part of
+                  the Derivative Works; and
+        
+              (d) If the Work includes a "NOTICE" text file as part of its
+                  distribution, then any Derivative Works that You distribute must
+                  include a readable copy of the attribution notices contained
+                  within such NOTICE file, excluding those notices that do not
+                  pertain to any part of the Derivative Works, in at least one
+                  of the following places: within a NOTICE text file distributed
+                  as part of the Derivative Works; within the Source form or
+                  documentation, if provided along with the Derivative Works; or,
+                  within a display generated by the Derivative Works, if and
+                  wherever such third-party notices normally appear. The contents
+                  of the NOTICE file are for informational purposes only and
+                  do not modify the License. You may add Your own attribution
+                  notices within Derivative Works that You distribute, alongside
+                  or as an addendum to the NOTICE text from the Work, provided
+                  that such additional attribution notices cannot be construed
+                  as modifying the License.
+        
+              You may add Your own copyright statement to Your modifications and
+              may provide additional or different license terms and conditions
+              for use, reproduction, or distribution of Your modifications, or
+              for any such Derivative Works as a whole, provided Your use,
+              reproduction, and distribution of the Work otherwise complies with
+              the conditions stated in this License.
+        
+           5. Submission of Contributions. Unless You explicitly state otherwise,
+              any Contribution intentionally submitted for inclusion in the Work
+              by You to the Licensor shall be under the terms and conditions of
+              this License, without any additional terms or conditions.
+              Notwithstanding the above, nothing herein shall supersede or modify
+              the terms of any separate license agreement you may have executed
+              with Licensor regarding such Contributions.
+        
+           6. Trademarks. This License does not grant permission to use the trade
+              names, trademarks, service marks, or product names of the Licensor,
+              except as required for reasonable and customary use in describing the
+              origin of the Work and reproducing the content of the NOTICE file.
+        
+           7. Disclaimer of Warranty. Unless required by applicable law or
+              agreed to in writing, Licensor provides the Work (and each
+              Contributor provides its Contributions) on an "AS IS" BASIS,
+              WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+              implied, including, without limitation, any warranties or conditions
+              of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+              PARTICULAR PURPOSE. You are solely responsible for determining the
+              appropriateness of using or redistributing the Work and assume any
+              risks associated with Your exercise of permissions under this License.
+        
+           8. Limitation of Liability. In no event and under no legal theory,
+              whether in tort (including negligence), contract, or otherwise,
+              unless required by applicable law (such as deliberate and grossly
+              negligent acts) or agreed to in writing, shall any Contributor be
+              liable to You for damages, including any direct, indirect, special,
+              incidental, or consequential damages of any character arising as a
+              result of this License or out of the use or inability to use the
+              Work (including but not limited to damages for loss of goodwill,
+              work stoppage, computer failure or malfunction, or any and all
+              other commercial damages or losses), even if such Contributor
+              has been advised of the possibility of such damages.
+        
+           9. Accepting Warranty or Additional Liability. While redistributing
+              the Work or Derivative Works thereof, You may choose to offer,
+              and charge a fee for, acceptance of support, warranty, indemnity,
+              or other liability obligations and/or rights consistent with this
+              License. However, in accepting such obligations, You may act only
+              on Your own behalf and on Your sole responsibility, not on behalf
+              of any other Contributor, and only if You agree to indemnify,
+              defend, and hold each Contributor harmless for any liability
+              incurred by, or claims asserted against, such Contributor by reason
+              of your accepting any such warranty or additional liability.
+        
+           END OF TERMS AND CONDITIONS
+        
+           APPENDIX: How to apply the Apache License to your work.
+        
+              To apply the Apache License to your work, attach the following
+              boilerplate notice, with the fields enclosed by brackets "[]"
+              replaced with your own identifying information. (Don't include
+              the brackets!)  The text should be enclosed in the appropriate
+              comment syntax for the file format. We also recommend that a
+              file or class name and description of purpose be included on the
+              same "printed page" as the copyright notice for easier
+              identification within third-party archives.
+        
+           Copyright 2025 FutureHouse
+        
+           Licensed under the Apache License, Version 2.0 (the "License");
+           you may not use this file except in compliance with the License.
+           You may obtain a copy of the License at
+        
+               http://www.apache.org/licenses/LICENSE-2.0
+        
+           Unless required by applicable law or agreed to in writing, software
+           distributed under the License is distributed on an "AS IS" BASIS,
+           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+           See the License for the specific language governing permissions and
+           limitations under the License.
+        
+Project-URL: issues, https://github.com/Future-House/ldp/packages/lmi/issues
+Project-URL: repository, https://github.com/Future-House/ldp/packages/lmi
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: coredis>=3.0.1
+Requires-Dist: fhaviary>=0.14.0
+Requires-Dist: limits[async-redis]>=4.8
+Requires-Dist: litellm>=1.81.10
+Requires-Dist: pydantic>=2.10.1,~=2.0
+Requires-Dist: tiktoken>=0.4.0
+Requires-Dist: typing-extensions; python_version <= "3.11"
+Provides-Extra: dev
+Requires-Dist: fhaviary[xml]; extra == "dev"
+Requires-Dist: fhlmi[image,local,progress,typing,vcr]; extra == "dev"
+Requires-Dist: google-auth>=2; extra == "dev"
+Requires-Dist: google-cloud-storage>=3; extra == "dev"
+Requires-Dist: httpx-aiohttp; extra == "dev"
+Requires-Dist: ipython>=8; extra == "dev"
+Requires-Dist: litellm>=1.81.3; extra == "dev"
+Requires-Dist: mypy>=1.8; extra == "dev"
+Requires-Dist: pre-commit>=3.4; extra == "dev"
+Requires-Dist: pylint-pydantic; extra == "dev"
+Requires-Dist: pytest-asyncio; extra == "dev"
+Requires-Dist: pytest-recording; extra == "dev"
+Requires-Dist: pytest-rerunfailures; extra == "dev"
+Requires-Dist: pytest-subtests; extra == "dev"
+Requires-Dist: pytest-sugar; extra == "dev"
+Requires-Dist: pytest-timer[colorama]; extra == "dev"
+Requires-Dist: pytest-xdist; extra == "dev"
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: python-dotenv; extra == "dev"
+Requires-Dist: refurb>=2; extra == "dev"
+Requires-Dist: typeguard; extra == "dev"
+Provides-Extra: image
+Requires-Dist: pillow>=10.3.0; extra == "image"
+Provides-Extra: local
+Requires-Dist: numpy; extra == "local"
+Requires-Dist: sentence-transformers; extra == "local"
+Provides-Extra: progress
+Requires-Dist: tqdm; extra == "progress"
+Provides-Extra: typing
+Requires-Dist: types-tqdm; extra == "typing"
+Provides-Extra: vcr
+Requires-Dist: vcrpy>=8; extra == "vcr"
+Dynamic: license-file
+
+# Language Model Interface (LMI)
+
+<!-- pyml disable-num-lines 6 line-length -->
+
+[![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
+[![PyPI version](https://badge.fury.io/py/fhlmi.svg)](https://badge.fury.io/py/fhlmi)
+[![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
+![PyPI Python Versions](https://img.shields.io/pypi/pyversions/fhlmi)
+
+A Python library for interacting with Large Language Models (LLMs)
+through a unified interface,
+hence the name Language Model Interface (LMI).
+
+## Installation
+
+```bash
+pip install fhlmi
+```
+
+<!--TOC-->
+
+---
+
+**Table of Contents**
+
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Documentation](#documentation)
+  - [LLMs](#llms)
+    - [LLMModel](#llmmodel)
+    - [LiteLLMModel](#litellmmodel)
+  - [Cost tracking](#cost-tracking)
+  - [Rate limiting](#rate-limiting)
+    - [Basic Usage](#basic-usage)
+    - [Rate Limit Format](#rate-limit-format)
+    - [Storage Options](#storage-options)
+    - [Monitoring Rate Limits](#monitoring-rate-limits)
+    - [Timeout Configuration](#timeout-configuration)
+    - [Weight-based Rate Limiting](#weight-based-rate-limiting)
+  - [Tool calling](#tool-calling)
+  - [Vertex](#vertex)
+  - [Embedding models](#embedding-models)
+    - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
+    - [HybridEmbeddingModel](#hybridembeddingmodel)
+    - [SentenceTransformerEmbeddingModel](#sentencetransformerembeddingmodel)
+
+---
+
+<!--TOC-->
+
+## Quick start
+
+A simple example of how to use the library with default settings is shown below.
+
+```python
+from lmi import LiteLLMModel
+from aviary.core import Message
+
+llm = LiteLLMModel()
+
+messages = [Message(content="What is the meaning of life?")]
+
+result = await llm.call_single(messages)
+# assert result.text == "42"
+```
+
+or, if you only have one user message, just:
+
+```python
+from lmi import LiteLLMModel
+
+llm = LiteLLMModel()
+result = await llm.call_single("What is the meaning of life?")
+# assert result.text == "42"
+```
+
+## Documentation
+
+### LLMs
+
+An LLM is a class that inherits from `LLMModel` and implements the following methods:
+
+- `async acompletion(messages: list[Message], **kwargs) -> list[LLMResult]`
+- `async acompletion_iter(messages: list[Message], **kwargs) -> AsyncIterator[LLMResult]`
+
+These methods are used by the base class `LLMModel` to implement the LLM interface.
+Because `LLMModel` is an abstract class, it doesn't depend on any specific LLM provider.
+All the connection with the provider is done in the subclasses using `acompletion` and `acompletion_iter` as interfaces.
+
+Because these are the only methods that communicate with the chosen LLM provider,
+we use an abstraction [LLMResult](https://github.com/Future-House/ldp/blob/main/packages/lmi/src/lmi/types.py#L35)
+to hold the results of the LLM call.
+
+#### LLMModel
+
+An `LLMModel` implements `call`, which receives a list of `aviary` `Message`s and returns a list of `LLMResult`s.
+`LLMModel.call` can receive callbacks, tools, and output schemas to control its behavior, as better explained below.
+Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`,
+which currently include text and images.
+`lmi` supports these modalities but does not support other modalities yet.
+Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
+
+#### LiteLLMModel
+
+`LiteLLMModel` wraps `LiteLLM` API usage within our `LLMModel` interface.
+It receives a `name` parameter,
+which is the name of the model to use and a `config` parameter,
+which is a dictionary of configuration options for the model following the
+[LiteLLM configuration schema](https://docs.litellm.ai/docs/routing).
+Common parameters such as `temperature`, `max_token`, and `n` (the number of completions to return)
+can be passed as part of the `config` dictionary.
+
+```python
+import os
+from lmi import LiteLLMModel
+
+config = {
+    "model_list": [
+        {
+            "model_name": "gpt-4o",
+            "litellm_params": {
+                "model": "gpt-4o",
+                "api_key": os.getenv("OPENAI_API_KEY"),
+                "frequency_penalty": 1.5,
+                "top_p": 0.9,
+                "max_tokens": 512,
+                "temperature": 0.1,
+                "n": 5,
+            },
+        }
+    ]
+}
+
+llm = LiteLLMModel(name="gpt-4o", config=config)
+```
+
+`config` can also be used to pass common parameters directly for the model.
+
+```python
+from lmi import LiteLLMModel
+
+config = {
+    "name": "gpt-4o",
+    "temperature": 0.1,
+    "max_tokens": 512,
+    "n": 5,
+}
+
+llm = LiteLLMModel(config=config)
+```
+
+### Cost tracking
+
+Cost tracking is supported in two different ways:
+
+1. Calls to the LLM return the token usage for each call in `LLMResult.prompt_count` and `LLMResult.completion_count`.
+   Additionally, `LLMResult.cost` can be used to get a cost estimate for the call in USD.
+2. A global cost tracker is maintained in `GLOBAL_COST_TRACKER`
+   and can be enabled or disabled using `enable_cost_tracking()` and `cost_tracking_ctx()`.
+
+### Rate limiting
+
+Rate limiting helps regulate the usage of resources to various services and LLMs.
+The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
+Currently, `lmi` take into account the tokens used (Tokens per Minute (TPM))
+and the requests handled (Requests per Minute (RPM)).
+
+#### Basic Usage
+
+Rate limits can be configured in two ways:
+
+1. Through the LLM configuration:
+
+   ```python
+   from lmi import LiteLLMModel
+
+   config = {
+       "rate_limit": {
+           "gpt-4": "100/minute",  # 100 tokens per minute
+       },
+       "request_limit": {
+           "gpt-4": "5/minute",  # 5 requests per minute
+       },
+   }
+
+   llm = LiteLLMModel(name="gpt-4", config=config)
+   ```
+
+   With `rate_limit` we rate limit only token consumption,
+   and with `request_limit` we rate limit only request volume.
+   You can configure both of them or only one of them as you need.
+
+2. Through the global rate limiter configuration:
+
+   ```python
+   from lmi.rate_limiter import GLOBAL_LIMITER
+
+   GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"  # tokens per minute
+   GLOBAL_LIMITER.rate_config[("client|request", "gpt-4")] = (
+       "5/minute"  # requests per minute
+   )
+   ```
+
+   With `client` we rate limit only token consumption,
+   and with `client|request` we rate limit only request volume.
+   You can configure both of them or only one of them as you need.
+
+#### Rate Limit Format
+
+Rate limits can be specified in two formats:
+
+1. As a string: `"<count> [per|/] [n (optional)] <second|minute|hour|day|month|year>"`
+
+   ```python
+   "100/minute"  # 100 tokens per minute
+
+   "5 per second"  # 5 tokens per second
+   "1000/day"  # 1000 tokens per day
+   ```
+
+2. Using RateLimitItem classes:
+
+   ```python
+   from limits import RateLimitItemPerSecond, RateLimitItemPerMinute
+
+   RateLimitItemPerSecond(30, 1)  # 30 tokens per second
+   RateLimitItemPerMinute(1000, 1)  # 1000 tokens per minute
+   ```
+
+#### Storage Options
+
+The rate limiter supports two storage backends:
+
+1. In-memory storage (default when Redis is not configured):
+
+   ```python
+   from lmi.rate_limiter import GlobalRateLimiter
+
+   limiter = GlobalRateLimiter(use_in_memory=True)
+   ```
+
+2. Redis storage (for cross-process rate limiting):
+
+   ```python
+   # Set REDIS_URL environment variable
+   import os
+
+   os.environ["REDIS_URL"] = "localhost:6379"
+
+   from lmi.rate_limiter import GlobalRateLimiter
+
+   limiter = GlobalRateLimiter()  # Will automatically use Redis if REDIS_URL is set
+   ```
+
+   This `limiter` can be used in within the `LLMModel.check_rate_limit` method
+   to check the rate limit before making a request,
+   similarly to how it is done in the [`LiteLLMModel` class][1].
+
+[1]: https://github.com/Future-House/ldp/blob/18138af155bef7686d1eb2b486edbc02d62037eb/packages/lmi/src/lmi/llms.py
+
+#### Monitoring Rate Limits
+
+You can monitor current rate limit status:
+
+```python
+from lmi.rate_limiter import GLOBAL_LIMITER
+from lmi import LiteLLMModel
+from aviary.core import Message
+
+config = {
+    "rate_limit": {
+        "gpt-4": "100/minute",  # 100 tokens per minute
+    },
+    "request_limit": {
+        "gpt-4": "5/minute",  # 5 requests per minute
+    },
+}
+
+llm = LiteLLMModel(name="gpt-4", config=config)
+results = await llm.call([Message(content="Hello, world!")])  # Consume some tokens
+
+status = await GLOBAL_LIMITER.rate_limit_status()
+
+# Example output:
+{
+    ("client|request", "gpt-4"): {  # the limit status for requests
+        "period_start": 1234567890,
+        "n_items_in_period": 1,
+        "period_seconds": 60,
+        "period_name": "minute",
+        "period_cap": 5,
+    },
+    ("client", "gpt-4"): {  # the limit status for tokens
+        "period_start": 1234567890,
+        "n_items_in_period": 50,
+        "period_seconds": 60,
+        "period_name": "minute",
+        "period_cap": 100,
+    },
+}
+```
+
+#### Timeout Configuration
+
+The default timeout for rate limiting is 60 seconds, but can be configured:
+
+```python
+import os
+
+os.environ["RATE_LIMITER_TIMEOUT"] = "30"  # 30 seconds timeout
+```
+
+#### Weight-based Rate Limiting
+
+Rate limits can account for different weights (e.g., token counts for LLM requests):
+
+```python
+await GLOBAL_LIMITER.try_acquire(
+    ("client", "gpt-4"),
+    weight=token_count,  # Number of tokens in the request
+    acquire_timeout=30.0,  # Optional timeout override
+)
+```
+
+### Tool calling
+
+LMI supports function calling through tools, which are functions that the LLM can invoke.
+Tools are passed to `LLMModel.call` or `LLMModel.call_single`
+as a list of [`Tool` objects from `aviary`][2],
+along with an optional `tool_choice` parameter that controls how the LLM uses these tools.
+
+[2]: https://github.com/Future-House/aviary/blob/1a50b116fb317c3ef27b45ea628781eb53c0b7ae/src/aviary/tools/base.py#L334
+
+The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
+
+| Tool Choice Value               | Constant                           | Behavior                                                                       |
+| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
+| `"none"`                        | `LLMModel.NO_TOOL_CHOICE`          | The model will not call any tools and instead generates a message              |
+| `"auto"`                        | `LLMModel.MODEL_CHOOSES_TOOL`      | The model can choose between generating a message or calling one or more tools |
+| `"required"`                    | `LLMModel.TOOL_CHOICE_REQUIRED`    | The model must call one or more tools                                          |
+| A specific `aviary.Tool` object | N/A                                | The model must call this specific tool                                         |
+| `None`                          | `LLMModel.UNSPECIFIED_TOOL_CHOICE` | No tool choice preference is provided to the LLM API                           |
+
+When tools are provided, the LLM's response will be wrapped in a `ToolRequestMessage` instead of a regular `Message`.
+The key differences are:
+
+- `Message` represents a basic chat message with a role (system/user/assistant) and content
+- `ToolRequestMessage` extends `Message` to include `tool_calls`, which contains a list of `ToolCall` objects,
+  which contains the tools the LLM chose to invoke and their arguments
+
+Further details about how to define a tool,
+use the `ToolRequestMessage` and the `ToolCall` objects can be found in the
+[Aviary documentation](https://github.com/Future-House/aviary?tab=readme-ov-file#tool).
+
+Here is a minimal example usage:
+
+```python
+from lmi import LiteLLMModel
+from aviary.core import Message, Tool
+import operator
+
+
+# Define a function that will be used as a tool
+def calculator(operation: str, x: float, y: float) -> float:
+    """
+    Performs basic arithmetic operations on two numbers.
+
+    Args:
+        operation (str): The arithmetic operation to perform ("+", "-", "*", or "/")
+        x (float): The first number
+        y (float): The second number
+
+    Returns:
+        float: The result of applying the operation to x and y
+
+    Raises:
+        KeyError: If operation is not one of "+", "-", "*", "/"
+        ZeroDivisionError: If operation is "/" and y is 0
+    """
+    operations = {
+        "+": operator.add,
+        "-": operator.sub,
+        "*": operator.mul,
+        "/": operator.truediv,
+    }
+    return operations[operation](x, y)
+
+
+# Create a tool from the calculator function
+calculator_tool = Tool.from_function(calculator)
+
+# The LLM must use the calculator tool
+llm = LiteLLMModel()
+result = await llm.call_single(
+    messages=[Message(content="What is 2 + 2?")],
+    tools=[calculator_tool],
+    tool_choice=LiteLLMModel.TOOL_CHOICE_REQUIRED,
+)
+
+# result.messages[0] will be a ToolRequestMessage with tool_calls containing
+# the calculator invocation with x=2, y=2, operation="+"
+```
+
+### Vertex
+
+Vertex requires a bit of extra set-up. First, install the extra dependency for auth:
+
+```sh
+pip install google-api-python-client
+```
+
+and then you need to configure which region/project you're using for the model calls.
+Make sure you're authed for that region/project. Typically that means running:
+
+```sh
+gcloud auth application-default login
+```
+
+Then you can use vertex models:
+
+```py
+from lmi import LiteLLMModel
+from aviary.core import Message
+
+vertex_config = {"vertex_project": "PROJECT_ID", "vertex_location": "REGION"}
+
+llm = LiteLLMModel(name="vertex_ai/gemini-2.5-pro", config=vertex_config)
+await llm.call_single("hey")
+```
+
+### Embedding models
+
+This client also includes embedding models.
+An embedding model is a class that inherits from `EmbeddingModel`
+and implements the `embed_documents` method,
+which receives a list of strings
+and returns a list with a list of floats (the embeddings) for each string.
+
+Currently, the following embedding models are supported:
+
+- `LiteLLMEmbeddingModel`
+- `SparseEmbeddingModel`
+- `SentenceTransformerEmbeddingModel`
+- `HybridEmbeddingModel`
+
+#### LiteLLMEmbeddingModel
+
+`LiteLLMEmbeddingModel` provides a wrapper around LiteLLM's embedding functionality.
+It supports various embedding models through the LiteLLM interface,
+with automatic dimension inference and token limit handling.
+It defaults to `text-embedding-3-small` and can be configured with `name` and `config` parameters.
+Notice that `LiteLLMEmbeddingModel` can also be rate limited.
+
+```python
+from lmi import LiteLLMEmbeddingModel
+
+model = LiteLLMEmbeddingModel(
+    name="text-embedding-3-small",
+    config={"rate_limit": "100/minute", "batch_size": 16},
+)
+
+embeddings = await model.embed_documents(["text1", "text2", "text3"])
+```
+
+#### HybridEmbeddingModel
+
+`HybridEmbeddingModel` combines multiple embedding models by concatenating their outputs.
+It is typically used to combine a dense embedding model (like `LiteLLMEmbeddingModel`)
+with a sparse embedding model for improved performance.
+The model can be created in two ways:
+
+```python
+from lmi import LiteLLMEmbeddingModel, SparseEmbeddingModel, HybridEmbeddingModel
+
+dense_model = LiteLLMEmbeddingModel(name="text-embedding-3-small")
+sparse_model = SparseEmbeddingModel()
+hybrid_model = HybridEmbeddingModel(models=[dense_model, sparse_model])
+```
+
+The resulting embedding dimension will be the sum of the dimensions of all component models.
+For example, if you combine a 1536-dimensional dense embedding with a 256-dimensional sparse embedding,
+the final embedding will be 1792-dimensional.
+
+#### SentenceTransformerEmbeddingModel
+
+You can also use `sentence-transformer`,
+which is a local embedding library with support for HuggingFace models,
+by installing `lmi[local]`.

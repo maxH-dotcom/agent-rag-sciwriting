@@ -1,0 +1,24 @@
+# 科研助手 MVP 依赖
+
+# 数据处理
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# LLM API (支持多种提供者)
+anthropic>=0.18.0
+openai>=1.0.0
+groq>=0.4.0
+
+# Notebook 生成
+nbformat>=5.9.0
+
+# 文献检索 (需要 Python 3.10+)
+paper-qa>=5.0.0
+openalex
+
+# 面板数据回归
+linearmodels>=5.0.0
+statsmodels>=0.14.0
+
+# 测试
+pytest>=7.0.0

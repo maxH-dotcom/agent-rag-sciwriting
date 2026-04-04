@@ -1,0 +1,824 @@
+Metadata-Version: 2.4
+Name: fhaviary
+Version: 0.34.0
+Summary: Gymnasium framework for training language model agents on constructive tasks
+Author-email: FutureHouse technical staff <hello@futurehouse.org>
+License:                                  Apache License
+                                   Version 2.0, January 2004
+                                http://www.apache.org/licenses/
+        
+           TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+        
+           1. Definitions.
+        
+              "License" shall mean the terms and conditions for use, reproduction,
+              and distribution as defined by Sections 1 through 9 of this document.
+        
+              "Licensor" shall mean the copyright owner or entity authorized by
+              the copyright owner that is granting the License.
+        
+              "Legal Entity" shall mean the union of the acting entity and all
+              other entities that control, are controlled by, or are under common
+              control with that entity. For the purposes of this definition,
+              "control" means (i) the power, direct or indirect, to cause the
+              direction or management of such entity, whether by contract or
+              otherwise, or (ii) ownership of fifty percent (50%) or more of the
+              outstanding shares, or (iii) beneficial ownership of such entity.
+        
+              "You" (or "Your") shall mean an individual or Legal Entity
+              exercising permissions granted by this License.
+        
+              "Source" form shall mean the preferred form for making modifications,
+              including but not limited to software source code, documentation
+              source, and configuration files.
+        
+              "Object" form shall mean any form resulting from mechanical
+              transformation or translation of a Source form, including but
+              not limited to compiled object code, generated documentation,
+              and conversions to other media types.
+        
+              "Work" shall mean the work of authorship, whether in Source or
+              Object form, made available under the License, as indicated by a
+              copyright notice that is included in or attached to the work
+              (an example is provided in the Appendix below).
+        
+              "Derivative Works" shall mean any work, whether in Source or Object
+              form, that is based on (or derived from) the Work and for which the
+              editorial revisions, annotations, elaborations, or other modifications
+              represent, as a whole, an original work of authorship. For the purposes
+              of this License, Derivative Works shall not include works that remain
+              separable from, or merely link (or bind by name) to the interfaces of,
+              the Work and Derivative Works thereof.
+        
+              "Contribution" shall mean any work of authorship, including
+              the original version of the Work and any modifications or additions
+              to that Work or Derivative Works thereof, that is intentionally
+              submitted to Licensor for inclusion in the Work by the copyright owner
+              or by an individual or Legal Entity authorized to submit on behalf of
+              the copyright owner. For the purposes of this definition, "submitted"
+              means any form of electronic, verbal, or written communication sent
+              to the Licensor or its representatives, including but not limited to
+              communication on electronic mailing lists, source code control systems,
+              and issue tracking systems that are managed by, or on behalf of, the
+              Licensor for the purpose of discussing and improving the Work, but
+              excluding communication that is conspicuously marked or otherwise
+              designated in writing by the copyright owner as "Not a Contribution."
+        
+              "Contributor" shall mean Licensor and any individual or Legal Entity
+              on behalf of whom a Contribution has been received by Licensor and
+              subsequently incorporated within the Work.
+        
+           2. Grant of Copyright License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              copyright license to reproduce, prepare Derivative Works of,
+              publicly display, publicly perform, sublicense, and distribute the
+              Work and such Derivative Works in Source or Object form.
+        
+           3. Grant of Patent License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              (except as stated in this section) patent license to make, have made,
+              use, offer to sell, sell, import, and otherwise transfer the Work,
+              where such license applies only to those patent claims licensable
+              by such Contributor that are necessarily infringed by their
+              Contribution(s) alone or by combination of their Contribution(s)
+              with the Work to which such Contribution(s) was submitted. If You
+              institute patent litigation against any entity (including a
+              cross-claim or counterclaim in a lawsuit) alleging that the Work
+              or a Contribution incorporated within the Work constitutes direct
+              or contributory patent infringement, then any patent licenses
+              granted to You under this License for that Work shall terminate
+              as of the date such litigation is filed.
+        
+           4. Redistribution. You may reproduce and distribute copies of the
+              Work or Derivative Works thereof in any medium, with or without
+              modifications, and in Source or Object form, provided that You
+              meet the following conditions:
+        
+              (a) You must give any other recipients of the Work or
+                  Derivative Works a copy of this License; and
+        
+              (b) You must cause any modified files to carry prominent notices
+                  stating that You changed the files; and
+        
+              (c) You must retain, in the Source form of any Derivative Works
+                  that You distribute, all copyright, patent, trademark, and
+                  attribution notices from the Source form of the Work,
+                  excluding those notices that do not pertain to any part of
+                  the Derivative Works; and
+        
+              (d) If the Work includes a "NOTICE" text file as part of its
+                  distribution, then any Derivative Works that You distribute must
+                  include a readable copy of the attribution notices contained
+                  within such NOTICE file, excluding those notices that do not
+                  pertain to any part of the Derivative Works, in at least one
+                  of the following places: within a NOTICE text file distributed
+                  as part of the Derivative Works; within the Source form or
+                  documentation, if provided along with the Derivative Works; or,
+                  within a display generated by the Derivative Works, if and
+                  wherever such third-party notices normally appear. The contents
+                  of the NOTICE file are for informational purposes only and
+                  do not modify the License. You may add Your own attribution
+                  notices within Derivative Works that You distribute, alongside
+                  or as an addendum to the NOTICE text from the Work, provided
+                  that such additional attribution notices cannot be construed
+                  as modifying the License.
+        
+              You may add Your own copyright statement to Your modifications and
+              may provide additional or different license terms and conditions
+              for use, reproduction, or distribution of Your modifications, or
+              for any such Derivative Works as a whole, provided Your use,
+              reproduction, and distribution of the Work otherwise complies with
+              the conditions stated in this License.
+        
+           5. Submission of Contributions. Unless You explicitly state otherwise,
+              any Contribution intentionally submitted for inclusion in the Work
+              by You to the Licensor shall be under the terms and conditions of
+              this License, without any additional terms or conditions.
+              Notwithstanding the above, nothing herein shall supersede or modify
+              the terms of any separate license agreement you may have executed
+              with Licensor regarding such Contributions.
+        
+           6. Trademarks. This License does not grant permission to use the trade
+              names, trademarks, service marks, or product names of the Licensor,
+              except as required for reasonable and customary use in describing the
+              origin of the Work and reproducing the content of the NOTICE file.
+        
+           7. Disclaimer of Warranty. Unless required by applicable law or
+              agreed to in writing, Licensor provides the Work (and each
+              Contributor provides its Contributions) on an "AS IS" BASIS,
+              WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+              implied, including, without limitation, any warranties or conditions
+              of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+              PARTICULAR PURPOSE. You are solely responsible for determining the
+              appropriateness of using or redistributing the Work and assume any
+              risks associated with Your exercise of permissions under this License.
+        
+           8. Limitation of Liability. In no event and under no legal theory,
+              whether in tort (including negligence), contract, or otherwise,
+              unless required by applicable law (such as deliberate and grossly
+              negligent acts) or agreed to in writing, shall any Contributor be
+              liable to You for damages, including any direct, indirect, special,
+              incidental, or consequential damages of any character arising as a
+              result of this License or out of the use or inability to use the
+              Work (including but not limited to damages for loss of goodwill,
+              work stoppage, computer failure or malfunction, or any and all
+              other commercial damages or losses), even if such Contributor
+              has been advised of the possibility of such damages.
+        
+           9. Accepting Warranty or Additional Liability. While redistributing
+              the Work or Derivative Works thereof, You may choose to offer,
+              and charge a fee for, acceptance of support, warranty, indemnity,
+              or other liability obligations and/or rights consistent with this
+              License. However, in accepting such obligations, You may act only
+              on Your own behalf and on Your sole responsibility, not on behalf
+              of any other Contributor, and only if You agree to indemnify,
+              defend, and hold each Contributor harmless for any liability
+              incurred by, or claims asserted against, such Contributor by reason
+              of your accepting any such warranty or additional liability.
+        
+           END OF TERMS AND CONDITIONS
+        
+           APPENDIX: How to apply the Apache License to your work.
+        
+              To apply the Apache License to your work, attach the following
+              boilerplate notice, with the fields enclosed by brackets "[]"
+              replaced with your own identifying information. (Don't include
+              the brackets!)  The text should be enclosed in the appropriate
+              comment syntax for the file format. We also recommend that a
+              file or class name and description of purpose be included on the
+              same "printed page" as the copyright notice for easier
+              identification within third-party archives.
+        
+           Copyright 2024 FutureHouse
+        
+           Licensed under the Apache License, Version 2.0 (the "License");
+           you may not use this file except in compliance with the License.
+           You may obtain a copy of the License at
+        
+               http://www.apache.org/licenses/LICENSE-2.0
+        
+           Unless required by applicable law or agreed to in writing, software
+           distributed under the License is distributed on an "AS IS" BASIS,
+           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+           See the License for the specific language governing permissions and
+           limitations under the License.
+        
+Project-URL: issues, https://github.com/Future-House/aviary/issues
+Project-URL: repository, https://github.com/Future-House/aviary
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: docstring_parser>=0.16
+Requires-Dist: httpx
+Requires-Dist: httpx-aiohttp
+Requires-Dist: pydantic~=2.0
+Provides-Extra: cloud
+Requires-Dist: boto3; extra == "cloud"
+Provides-Extra: dev
+Requires-Dist: aviary.gsm8k[typing]; extra == "dev"
+Requires-Dist: aviary.hotpotqa; extra == "dev"
+Requires-Dist: aviary.labbench[dev]; extra == "dev"
+Requires-Dist: aviary.lfrqa[dev]; extra == "dev"
+Requires-Dist: aviary.notebook[dev]; extra == "dev"
+Requires-Dist: fhaviary[image,llm,server,typing,xml]; extra == "dev"
+Requires-Dist: ipython>=8; extra == "dev"
+Requires-Dist: jupyter>=1.0.0; extra == "dev"
+Requires-Dist: litellm>=1.80.11; extra == "dev"
+Requires-Dist: mypy>=1.19; extra == "dev"
+Requires-Dist: numpy>=1; extra == "dev"
+Requires-Dist: prek; extra == "dev"
+Requires-Dist: pydantic~=2.9; extra == "dev"
+Requires-Dist: pylint-pydantic; extra == "dev"
+Requires-Dist: pylint>=4; extra == "dev"
+Requires-Dist: pytest-asyncio; extra == "dev"
+Requires-Dist: pytest-recording; extra == "dev"
+Requires-Dist: pytest-rerunfailures; extra == "dev"
+Requires-Dist: pytest-subtests; extra == "dev"
+Requires-Dist: pytest-sugar; extra == "dev"
+Requires-Dist: pytest-timer[colorama]; extra == "dev"
+Requires-Dist: pytest-xdist; extra == "dev"
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: refurb>=2; extra == "dev"
+Requires-Dist: tenacity; extra == "dev"
+Requires-Dist: typeguard; extra == "dev"
+Requires-Dist: vcrpy>=8; extra == "dev"
+Provides-Extra: gsm8k
+Requires-Dist: aviary.gsm8k; extra == "gsm8k"
+Provides-Extra: hotpotqa
+Requires-Dist: aviary.hotpotqa; extra == "hotpotqa"
+Provides-Extra: image
+Requires-Dist: Pillow; extra == "image"
+Provides-Extra: labbench
+Requires-Dist: aviary.labbench; extra == "labbench"
+Provides-Extra: lfrqa
+Requires-Dist: aviary.lfrqa; extra == "lfrqa"
+Provides-Extra: llm
+Requires-Dist: fhlmi; extra == "llm"
+Requires-Dist: litellm>=1.49.1; extra == "llm"
+Requires-Dist: packaging; extra == "llm"
+Provides-Extra: notebook
+Requires-Dist: aviary.notebook; extra == "notebook"
+Provides-Extra: server
+Requires-Dist: click; extra == "server"
+Requires-Dist: cloudpickle; extra == "server"
+Requires-Dist: fastapi; extra == "server"
+Requires-Dist: uvicorn; extra == "server"
+Provides-Extra: typing
+Requires-Dist: boto3-stubs[s3]; extra == "typing"
+Requires-Dist: numpy; extra == "typing"
+Requires-Dist: pandas-stubs; extra == "typing"
+Requires-Dist: types-Pillow; extra == "typing"
+Provides-Extra: xml
+Requires-Dist: dicttoxml; extra == "xml"
+Dynamic: license-file
+
+# Aviary
+
+<!-- pyml disable-num-lines 10 line-length -->
+
+[![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/aviary)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
+[![Docs](https://assets.readthedocs.org/static/projects/badges/passing-flat.svg)](https://aviary.bio/)
+[![PyPI version](https://badge.fury.io/py/fhaviary.svg)](https://badge.fury.io/py/fhaviary)
+[![tests](https://github.com/Future-House/aviary/actions/workflows/tests.yml/badge.svg)](https://github.com/Future-House/aviary)
+[![CodeFactor](https://www.codefactor.io/repository/github/future-house/aviary/badge/main)](https://www.codefactor.io/repository/github/future-house/aviary/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=flat&logo=python&logoColor=white)](https://www.python.org)
+
+<p align="left">
+  <a href="https://arxiv.org/abs/2412.21154">
+    <img src="docs/assets/aviary_art.png" width="500" alt="Crows in a gym" />
+  </a>
+</p>
+
+**Aviary** [^1] is a gymnasium for defining custom language agent RL environments.
+The library features pre-existing environments on
+math [^2], general knowledge [^3], biological sequences [^4], scientific literature search [^5], and protein stability.
+Aviary is designed to work in tandem with its sister library LDP (<https://github.com/Future-House/ldp>)
+which enables the user to define custom language agents as Language Decision Processes.
+See the following [tutorial][2] for an example of how to run an LDP language agent on an Aviary environment.
+
+[2]: https://github.com/Future-House/aviary/blob/main/tutorials/Building%20a%20GSM8k%20Environment%20in%20Aviary.ipynb
+
+[Overview](#overview)
+| [Getting Started](#getting-started)
+| [Documentation](https://aviary.bio/)
+| [Paper](https://arxiv.org/abs/2412.21154)
+
+## What's New?
+
+- We have a new environment to run Jupyter notebooks at
+  [packages/notebook](packages/notebook).
+
+## Overview
+
+<p align="left">
+  <a href="https://arxiv.org/abs/2412.21154">
+    <img src="docs/assets/Aviary.png" width="800" alt="Aviary and LDP overview from paper" />
+  </a>
+</p>
+
+A pictorial overview of the five implemented Aviary environments and the language decision process framework.
+
+## Getting Started
+
+To install aviary (note `fh` stands for FutureHouse):
+
+```bash
+pip install fhaviary
+```
+
+To install aviary together with the incumbent environments:
+
+```bash
+pip install 'fhaviary[gsm8k,hotpotqa,labbench,lfrqa,notebook]'
+```
+
+To run the tutorial notebooks:
+
+```bash
+pip install "fhaviary[dev]"
+```
+
+### Developer Installation
+
+For local development, please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Tutorial Notebooks
+
+1. [Building a Custom Environment in Aviary](tutorials/Building%20a%20Custom%20Environment%20in%20Aviary.ipynb)
+2. [Building a GSM8K Environment in Aviary](tutorials/Building%20a%20GSM8k%20Environment%20in%20Aviary.ipynb)
+3. [Creating Language Agents to Interact with Aviary Environments][4]
+4. [Evaluate a Llama Agent on GSM8K][5]
+
+[4]: https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb
+[5]: https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb
+
+## Defining a Custom Environment
+
+The example below walks through defining a custom environment in Aviary.
+We define a simple environment where an agent takes actions to modify a counter.
+The example is also featured in the following [notebook][1].
+
+```python
+from collections import namedtuple
+from aviary.core import Environment, Message, ToolRequestMessage, Tool
+
+# State in this example is simply a counter
+CounterEnvState = namedtuple("CounterEnvState", ["count"])
+
+
+class CounterEnv(Environment[CounterEnvState]):
+    """A simple environment that allows an agent to modify a counter."""
+
+    async def reset(self):
+        """Initialize the environment with a counter set to 0. Goal is to count to 10"""
+        self.state = CounterEnvState(count=0)
+
+        # Target count
+        self.target = 10
+
+        # Create tools allowing the agent to increment and decrement counter
+        self.tools = [
+            Tool.from_function(self.incr),
+            Tool.from_function(self.decr),
+        ]
+
+        # Return an observation message with the counter and available tools
+        return [Message(content=f"Count to 10. counter={self.state.count}")], self.tools
+
+    async def step(self, action: ToolRequestMessage):
+        """Executes the tool call requested by the agent."""
+        obs = await self.exec_tool_calls(action)
+
+        # The reward is the square of the current count
+        reward = int(self.state.count == self.target)
+
+        # Returns observations, reward, done, truncated
+        return obs, reward, reward == 1, False
+
+    def incr(self):
+        """Increment the counter."""
+        self.state.count += 1
+        return f"counter={self.state.count}"
+
+    def decr(self):
+        """Decrement the counter."""
+        self.state.count -= 1
+        return f"counter={self.state.count}"
+```
+
+## Evaluating an Agent on the Environment
+
+Following the definition of our custom environment,
+we can now evaluate a language agent on the environment using
+Aviary's sister library LDP (<https://github.com/Future-House/ldp>).
+
+```python
+from ldp.agent import Agent
+from ldp.graph import LLMCallOp
+from ldp.alg import RolloutManager
+
+
+class AgentState:
+    """A container for maintaining agent state across interactions."""
+
+    def __init__(self, messages, tools):
+        self.messages = messages
+        self.tools = tools
+
+
+class SimpleAgent(Agent):
+    def __init__(self, **kwargs):
+        self._llm_call_op = LLMCallOp(**kwargs)
+
+    async def init_state(self, tools):
+        return AgentState([], tools)
+
+    async def get_asv(self, agent_state, obs):
+        """Take an action, observe new state, return value"""
+        action = await self._llm_call_op(
+            config={"name": "gpt-4o", "temperature": 0.1},
+            msgs=agent_state.messages + obs,
+            tools=agent_state.tools,
+        )
+        new_state = AgentState(
+            messages=agent_state.messages + obs + [action],
+            tools=agent_state.tools,
+        )
+        # Return action, state, value
+        return action, new_state, 0.0
+
+
+# Create a simple agent and perform rollouts on the environment
+
+# Endpoint can be model identifier e.g. "claude-3-opus" depending on service
+agent = SimpleAgent(config={"model": "my_llm_endpoint"})
+
+runner = RolloutManager(agent=agent)
+
+trajectories = await runner.sample_trajectories(
+    environment_factory=CounterEnv,
+    batch_size=2,
+)
+```
+
+Below we expand on some of the core components of the Aviary library together with more advanced usage examples.
+
+### Environment
+
+An environment should have two methods, `env.reset` and `env.step`:
+
+```py
+obs_msgs, tools = await env.reset()
+new_obs_msgs, reward, done, truncated = await env.step(action_msg)
+```
+
+Communication is achieved through messages.
+
+The `action_msg` is an instance of `ToolRequestMessage` which comprises one or more calls
+to the `tools` returned by `env.reset` method.
+
+The `obs_msgs` are either general obseravation messages
+or instances of `ToolResponseMessage` returned from the environment.
+while `reward` is a scalar value, and `done` and `truncated`
+are Boolean values.
+
+We explain the message formalism in further detail below.
+
+### Messages
+
+Communication between the agent and environment is achieved via messages.
+We follow the [OpenAI](https://platform.openai.com/docs/api-reference/messages/createMessage) standard.
+Messages have two attributes:
+
+```py
+msg = Message(content="Hello, world!", role="assistant")
+```
+
+The `content` attribute can be a string but can also comprise objects such as [images][3].
+For example, the `create_message` method can be used to create a message with images:
+
+[3]: https://platform.openai.com/docs/guides/vision?lang=node#uploading-base64-encoded-images
+
+```py
+from PIL import Image
+import numpy as np
+
+img = Image.open("your_image.jpg")
+img_array = np.array(img)
+
+msg = Message.create_message(role="user", text="Hello, world!", images=[img_array])
+```
+
+In this case, `content` will be a list of dictionaries with the keys `text` and `image_url`.
+
+```py
+{
+    {"type": "text", "text": "Hello World!"},
+    {"text": "image_url", "image_url": "data:image/png;base64,{base64_image}"},
+}
+```
+
+The role, see the table below.
+You can change around roles as desired,
+except for `tool` which has a special meaning in aviary.
+
+| Role      | Host                                             | Example(s)                                                       |
+| --------- | ------------------------------------------------ | ---------------------------------------------------------------- |
+| assistant | Agent                                            | An agent's tool selection message                                |
+| system    | Agent system prompt                              | "You are an agent."                                              |
+| user      | Environment system prompt or emitted observation | HotPotQA problem to solve, or details of an internal env failure |
+| tool      | Result of a tool run in the environment          | The output of the calculator tool for a GSM8K question           |
+
+The `Message` class is extended in `ToolRequestMessage` and `ToolResponseMessage`
+to include the relevant tool name and arguments.
+
+### Subclassing Environments
+
+If you need more control over Environments and tools, you may wish to subclass `Environment`. We illustrate this
+with an example environment in which an agent is tasked to write a story.
+
+We subclass `Environment` and define a `state`. The `state` consists of all variables
+that change per step that we wish to bundle together. It will be accessible in tools, so you can use `state` to store
+information you want to persist between steps and tool calls.
+
+```py
+from pydantic import BaseModel
+from aviary.core import Environment
+
+
+class ExampleState(BaseModel):
+    reward: float = 0
+    done: bool = False
+
+
+class ExampleEnv(Environment[ExampleState]):
+    state: ExampleState
+```
+
+We do not have other variables aside from `state` for this environment,
+although we could also have variables like configuration, a name,
+tasks, etc. attached to it.
+
+### Defining Tools
+
+We will define a single tool that prints a story. Tools may optionally take a final argument
+`state` which is the environment state. This argument will not be
+exposed to the agent as a parameter but will be injected by the environment
+(if part of the function signature).
+
+```py
+def print_story(story: str, state: ExampleState):
+    """Print a story.
+
+    Args:
+        story: Story to print.
+        state: Environment state (hidden from agent).
+    """
+    print(story)
+    state.reward = 1
+    state.done = True
+```
+
+The tool is built from the following parts of the function: its
+name, its argument's names, the arguments types, and the docstring.
+The docstring is parsed to obtain a description of the
+function and its arguments, so be sure to match the syntax carefully.
+
+Environment episode completion is indicated by setting `state.done = True`.
+This example terminates immediately - other
+termination conditions are also possible.
+
+It is also possible make the function `async` - the environment will account for that when the tool is called.
+
+### Advanced Tool Descriptions
+
+Aviary also supports more sophisticated signatures:
+
+- Multiline docstrings
+- Non-primitive type hints (e.g. type unions)
+- Default values
+- Exclusion of info below `\f` (see below)
+
+If you have summary-level information that belongs in the docstring,
+but you don't want it to be part of the `Tool.info.description`,
+add a `r` prefix to the docstring
+and inject `\f` before the summary information to exclude.
+This convention was created by FastAPI ([docs][1]).
+
+[1]: https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#advanced-description-from-docstring
+
+```python
+def print_story(story: str | bytes, state: ExampleState):
+    r"""Print a story.
+
+    Extra information that is part of the tool description.
+
+    \f
+
+    This sentence is excluded because it's an implementation detail.
+
+    Args:
+        story: Story to print, either as a string or bytes.
+        state: Environment state.
+    """
+    print(story)
+    state.reward = 1
+    state.done = True
+```
+
+### The Environment `reset` Method
+
+Next we define the `reset` function which initializes the tools
+and returns one or more initial observations as well as the tools.
+The `reset` function is `async` to allow for database interactions or HTTP requests.
+
+```py
+from aviary.core import Message, Tool
+
+
+async def reset(self):
+    self.tools = [Tool.from_function(ExampleEnv.print_story)]
+    start = Message(content="Write a 5 word story and call print")
+    return [start], self.tools
+```
+
+### The Environment `step` Method
+
+Next we define the `step` function which takes an action and returns
+the next observation, reward, done, and whether the episode was truncated.
+
+```py
+from aviary.core import Message
+
+
+async def step(self, action: Message):
+    msgs = await self.exec_tool_calls(action, state=self.state)
+    return msgs, self.state.reward, self.state.done, False
+```
+
+You will probably often use this specific syntax for calling the tools - calling `exec_tool_calls` with the action.
+
+### Environment `export_frame` Method
+
+Optionally, we can define a function to export a snapshot of the environment
+and its state for visualization or debugging purposes.
+
+```py
+from aviary.core import Frame
+
+
+def export_frame(self):
+    return Frame(
+        state={"done": self.state.done, "reward": self.state.reward},
+        info={"tool_names": [t.info.name for t in self.tools]},
+    )
+```
+
+### Viewing Environment Tools
+
+If an environment can be instantiated without anything other than the task
+(i.e., it implements `from_task`), you can start a server to view its tools:
+
+```sh
+pip install fhaviary[server]
+aviary tools [env name]
+```
+
+This will start a server that allows you to view the tools and call them,
+viewing the descriptions/types and output that an agent would see when using the tools.
+
+### Incumbent Environments
+
+Below we list some pre-existing environments implemented in Aviary:
+
+| Environment | PyPI                                                           | Extra                | README                                                  |
+| ----------- | -------------------------------------------------------------- | -------------------- | ------------------------------------------------------- |
+| GSM8k       | [`aviary.gsm8k`](https://pypi.org/project/aviary.gsm8k/)       | `fhaviary[gsm8k]`    | [`README.md`](packages/gsm8k/README.md#installation)    |
+| HotPotQA    | [`aviary.hotpotqa`](https://pypi.org/project/aviary.hotpotqa/) | `fhaviary[hotpotqa]` | [`README.md`](packages/hotpotqa/README.md#installation) |
+| LAB-Bench   | [`aviary.labbench`](https://pypi.org/project/aviary.labbench/) | `fhaviary[labbench]` | [`README.md`](packages/labbench/README.md#installation) |
+| LFRQA       | [`aviary.lfrqa`](https://pypi.org/project/aviary.lfrqa/)       | `fhaviary[lfrqa]`    | [`README.md`](packages/lfrqa/README.md#installation)    |
+| Notebook    | [`aviary.notebook`](https://pypi.org/project/aviary.notebook/) | `fhaviary[notebook]` | [`README.md`](packages/notebook/README.md#installation) |
+| LitQA       | [`aviary.litqa`](https://pypi.org/project/aviary.litqa/)       | Moved to `labbench`  | Moved to `labbench`                                     |
+
+### Task Datasets
+
+Included with some environments are collections of problems that define training or evaluation datasets.
+We refer to these as `TaskDataset`s, e.g. for the `HotpotQADataset` subclass of `TaskDataset`:
+
+```py
+from aviary.envs.hotpotqa import HotPotQADataset
+
+dataset = HotPotQADataset(split="dev")
+```
+
+### Functional Environments
+
+An alternative way to create an environment is using the functional interface,
+which uses functions and decorators to define environments.
+Let's define an environment that requires an agent to write a story
+about a particular topic by implementing its `start` function:
+
+```python
+from aviary.core import fenv
+
+
+@fenv.start()
+def my_env(topic):
+    # return the first observation and starting environment state
+    # (empty in this case)
+    return f"Write a story about {topic}", {}
+```
+
+The `start` decorator begins the definition of an environment.
+
+The function, `my_env`,
+takes an arbitrary input and returns a tuple containing the first observation
+and any information you wish to store about the environment state
+(used to persist/share information between tools).
+
+The state will always have an optional `reward` and a Boolean `done` that indicate
+if the environment episode is complete.
+Next we define some tools:
+
+```python
+@my_env.tool()
+def multiply(x: float, y: float) -> float:
+    """Multiply two numbers."""
+    return x * y
+
+
+@my_env.tool()
+def print_story(story: str | bytes, state) -> None:
+    """Print a story to the user and complete episode."""
+    print(story)
+    state.reward = 1
+    state.done = True
+```
+
+The tools will be converted into objects visible for LLMs using the type hints and the variable descriptions.
+Thus, the type hinting can be valuable for an agent that uses it correctly.
+The docstrings are also passed to the LLM and is the primary means
+(along with the function name) for communicating the intended tool usage.
+
+You can access the `state` variable in tools,
+which will have any fields you passed in the return tuple of `start()`.
+For example, if you returned `{'foo': 'bar'}`,
+then you could access `state.foo` in the tools.
+
+You may stop an environment or set a reward via the `state` variable
+as shown in the second `print_story` tool.
+If the reward is not set, it is treated as zero.
+Next we illustrate how to use our environment:
+
+```python
+env = my_env(topic="foo")
+obs, tools = await env.reset()
+```
+
+## Citing Aviary
+
+If Aviary is useful for your work please consider citing the following paper:
+
+```bibtex
+@article{Narayanan_Aviary_training_language_2024,
+  title   = {{Aviary: training language agents on challenging scientific tasks}},
+  author  = {
+    Narayanan, Siddharth and Braza, James D. and Griffiths, Ryan-Rhys and
+    Ponnapati, Manvitha and Bou, Albert and Laurent, Jon and Kabeli, Ori and
+    Wellawatte, Geemi and Cox, Sam and Rodriques, Samuel G. and White, Andrew
+    D.
+  },
+  year    = 2024,
+  month   = dec,
+  journal = {preprint},
+  doi     = {10.48550/arXiv.2412.21154},
+  url     = {https://arxiv.org/abs/2412.21154}
+}
+```
+
+## References
+
+[^1]: Narayanan, S., Braza, J.D., Griffiths, R.R., Ponnapati, M., Bou, A., Laurent, J., Kabeli, O., Wellawatte, G., Cox, S., Rodriques, S.G. and White, A.D., 2024. [Aviary: training language agents on challenging scientific tasks.](https://arxiv.org/abs/2412.21154) arXiv preprint arXiv:2412.21154.
+
+[^2]: Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert, M., Tworek, J., Hilton, J., Nakano, R. and Hesse, C., 2021. [Training verifiers to solve math word problems.](https://arxiv.org/abs/2110.14168) arXiv preprint arXiv:2110.14168.
+
+[^3]: Yang, Z., Qi, P., Zhang, S., Bengio, Y., Cohen, W., Salakhutdinov, R. and Manning, C.D., 2018. [HotpotQA: A dataset for diverse, explainable multi-hop question answering.](https://aclanthology.org/D18-1259/) EMNLP 2018 (pp. 2369-2380).
+
+[^4]: Laurent, J.M., Janizek, J.D., Ruzo, M., Hinks, M.M., Hammerling, M.J., Narayanan, S., Ponnapati, M., White, A.D. and Rodriques, S.G., 2024. [Lab-Bench: Measuring capabilities of language models for biology research.](https://arxiv.org/abs/2407.10362) arXiv preprint arXiv:2407.10362.
+
+[^5]: Skarlinski, M.D., Cox, S., Laurent, J.M., Braza, J.D., Hinks, M., Hammerling, M.J., Ponnapati, M., Rodriques, S.G. and White, A.D., 2024. [Language agents achieve superhuman synthesis of scientific knowledge.](https://arxiv.org/abs/2409.13740) arXiv preprint arXiv:2409.13740.
