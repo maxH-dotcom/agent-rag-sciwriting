@@ -56,6 +56,18 @@ class TaskCheckpointResponse(BaseModel):
     checkpoints: List[Dict[str, Any]]
 
 
+class FileUploadResponse(BaseModel):
+    path: str = Field(description="服务端绝对路径，可直接用于 data_files/paper_files")
+    name: str
+    suffix: str
+    size_bytes: int
+    kind: Literal["data", "paper"]
+
+
+class MultiFileUploadResponse(BaseModel):
+    files: List[FileUploadResponse]
+
+
 class RuntimeInfoResponse(BaseModel):
     configured_backend: str
     effective_backend: str

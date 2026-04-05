@@ -125,6 +125,96 @@ class ApiLayerTest(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    # ---- 文件上传测试 ----
+
+    def test_upload_csv_auto_kind(self) -> None:
+        """上传 CSV 文件，auto 模式应识别为 data。"""
+        response = self.client.post(
+            "/upload",
+            files=[("files", ("test.csv", b"a,b,c\n1,2,3", "text/csv"))],
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data["files"]), 1)
+        f = data["files"][0]
+        self.assertEqual(f["name"], "test.csv")
+        self.assertEqual(f["suffix"], ".csv")
+        self.assertEqual(f["kind"], "data")
+        self.assertGreater(f["size_bytes"], 0)
+        self.assertTrue(Path(f["path"]).exists())
+
+    def test_upload_pdf_auto_kind(self) -> None:
+        """上传 PDF 文件，auto 模式应识别为 paper。"""
+        response = self.client.post(
+            "/upload",
+            files=[("files", ("paper.pdf", b"%PDF-1.4 fake", "application/pdf"))],
+        )
+        self.assertEqual(response.status_code, 200)
+        f = response.json()["files"][0]
+        self.assertEqual(f["kind"], "paper")
+        self.assertEqual(f["suffix"], ".pdf")
+
+    def test_upload_multiple_files(self) -> None:
+        """同时上传多个文件。"""
+        response = self.client.post(
+            "/upload",
+            files=[
+                ("files", ("a.csv", b"x,y\n1,2", "text/csv")),
+                ("files", ("b.pdf", b"%PDF", "application/pdf")),
+            ],
+        )
+        self.assertEqual(response.status_code, 200)
+        files = response.json()["files"]
+        self.assertEqual(len(files), 2)
+        kinds = {f["kind"] for f in files}
+        self.assertEqual(kinds, {"data", "paper"})
+
+    def test_upload_explicit_kind(self) -> None:
+        """指定 kind=data 上传 CSV。"""
+        response = self.client.post(
+            "/upload?kind=data",
+            files=[("files", ("d.csv", b"col\n1", "text/csv"))],
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["files"][0]["kind"], "data")
+
+    def test_upload_unsupported_suffix_returns_400(self) -> None:
+        """上传不支持的文件类型应返回 400。"""
+        response = self.client.post(
+            "/upload",
+            files=[("files", ("script.py", b"print(1)", "text/plain"))],
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_upload_kind_mismatch_returns_400(self) -> None:
+        """指定 kind=data 但上传 PDF 应返回 400。"""
+        response = self.client.post(
+            "/upload?kind=data",
+            files=[("files", ("paper.pdf", b"%PDF", "application/pdf"))],
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_upload_then_create_task(self) -> None:
+        """上传文件后用返回路径创建任务的完整链路。"""
+        upload_resp = self.client.post(
+            "/upload",
+            files=[("files", ("demo.csv", self.data_path.read_bytes(), "text/csv"))],
+        )
+        self.assertEqual(upload_resp.status_code, 200)
+        uploaded_path = upload_resp.json()["files"][0]["path"]
+
+        task_resp = self.client.post(
+            "/tasks",
+            json={
+                "task_type": "analysis",
+                "user_query": "测试上传链路",
+                "data_files": [uploaded_path],
+                "paper_files": [],
+            },
+        )
+        self.assertEqual(task_resp.status_code, 200)
+        self.assertEqual(task_resp.json()["status"], "interrupted")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,9 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from __future__ import annotations
+
+import uuid
+from pathlib import Path
+from typing import List
+
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 
 from backend.api.schemas import (
     AbortTaskRequest,
     ContinueTaskRequest,
     CreateTaskRequest,
+    FileUploadResponse,
+    MultiFileUploadResponse,
     RuntimeInfoResponse,
     TaskCheckpointResponse,
     TaskHistoryResponse,
@@ -11,8 +19,11 @@ from backend.api.schemas import (
     TaskResponse,
 )
 from backend.agents.runtime import get_orchestration_runtime_info
+from backend.core.config import UPLOAD_DIR
+from backend.core.file_validation import SUPPORTED_DATA_SUFFIXES, SUPPORTED_PAPER_SUFFIXES
 from backend.core.task_store import store
 
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
 router = APIRouter()
 
@@ -23,6 +34,68 @@ def get_runtime_info() -> RuntimeInfoResponse:
     payload["task_repository_backend"] = store.repository.backend_name
     payload["checkpoint_repository_backend"] = store.checkpoint_repository.backend_name
     return RuntimeInfoResponse(**payload)
+
+
+@router.post("/upload", response_model=MultiFileUploadResponse)
+async def upload_files(
+    files: List[UploadFile] = File(..., description="上传数据文件或论文文件"),
+    kind: str = Query("auto", description="文件类型：data / paper / auto（按后缀自动判断）"),
+) -> MultiFileUploadResponse:
+    """上传文件到服务端，返回绝对路径供后续 /tasks 使用。"""
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    all_allowed = SUPPORTED_DATA_SUFFIXES | SUPPORTED_PAPER_SUFFIXES
+
+    results: list[FileUploadResponse] = []
+    for upload in files:
+        filename = upload.filename or "unknown"
+        suffix = Path(filename).suffix.lower()
+
+        # 后缀校验
+        if suffix not in all_allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"文件类型不支持: {suffix or '无后缀'}，允许: {sorted(all_allowed)}",
+            )
+
+        # 判断 kind
+        if kind == "auto":
+            file_kind = "data" if suffix in SUPPORTED_DATA_SUFFIXES else "paper"
+        elif kind in ("data", "paper"):
+            expected = SUPPORTED_DATA_SUFFIXES if kind == "data" else SUPPORTED_PAPER_SUFFIXES
+            if suffix not in expected:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"文件 {filename} 后缀 {suffix} 与指定类型 {kind} 不匹配，"
+                    f"允许: {sorted(expected)}",
+                )
+            file_kind = kind
+        else:
+            raise HTTPException(status_code=400, detail=f"kind 参数无效: {kind}，允许: data / paper / auto")
+
+        # 读取内容并检查大小
+        content = await upload.read()
+        if len(content) > MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"文件 {filename} 超过大小限制 ({MAX_UPLOAD_SIZE // 1024 // 1024} MB)",
+            )
+
+        # 保存：用 uuid 前缀防止文件名冲突
+        safe_name = f"{uuid.uuid4().hex[:8]}_{filename}"
+        dest = UPLOAD_DIR / safe_name
+        dest.write_bytes(content)
+
+        results.append(
+            FileUploadResponse(
+                path=str(dest.resolve()),
+                name=filename,
+                suffix=suffix,
+                size_bytes=len(content),
+                kind=file_kind,
+            )
+        )
+
+    return MultiFileUploadResponse(files=results)
 
 
 @router.post("/tasks", response_model=TaskResponse)

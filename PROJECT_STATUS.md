@@ -1,6 +1,6 @@
 # 智能科研工作助手 - 项目状态
 
-> 最后更新：2026-04-05
+> 最后更新：2026-04-06
 
 ---
 
@@ -53,17 +53,37 @@
 - 前端代码已移至 `paused-work/frontend-workbench-paused/`
 - 暂停原因：后端链路尚不稳定，不适合同时推进前后端
 
+### 8. OpenAlex 文献质量提升（A）
+- `_reconstruct_abstract()`：从 `abstract_inverted_index` 重建完整摘要
+- `_extract_openalex_metadata()`：基于摘要+标题+concepts 提取方法/领域/地区/数据结构
+- API 参数优化：`has_abstract:true` 过滤 + `relevance_score:desc` 排序，返回 5 条
+- 覆盖：10 领域、18 方法、4 数据结构类型、11 地区，中英文关键词双覆盖
+- `source` 字段格式化为 `OpenAlex: 作者名 (年份)`，`text` 包含摘要+期刊+年份+关键概念
+
+**待完善：**
+- OpenAlex 英文搜索相关性有限（搜索引擎本身限制），方法类关键词命中率低于领域/地区
+- 部分论文摘要中不提及具体方法名称时 `method_name` 仍为"待解析"，可考虑结合 LLM 辅助提取
+- `concepts` 字段可进一步用于自动映射 `method_name`（OpenAlex concepts 有层级结构，level 0-5）
+- 英文查询结果与查询意图偏差较大时，可尝试拼接 `filter=concepts.id:C...` 做概念级过滤
+
+### 9. 真实文件上传机制（D）
+- `POST /upload` multipart 端点，支持多文件同时上传
+- 自动判断文件类型（`kind=auto`）：CSV/XLSX→data，PDF/TXT/MD→paper
+- 支持显式指定 `kind=data` 或 `kind=paper`，带后缀校验
+- 文件保存至 `UPLOAD_DIR`（默认 `.runtime/uploads/`，可通过环境变量覆盖）
+- UUID 前缀防止文件名冲突，50 MB 大小限制
+- 返回服务端绝对路径，可直接传入 `POST /tasks` 的 `data_files`/`paper_files`
+- 7 个新测试覆盖：auto/explicit kind、多文件、后缀校验、kind 不匹配、upload→task 完整链路
+- 28/28 测试全部通过
+
 ---
 
 ## 待完成项目（按优先级）
 
 ### 高优先级
 
-#### A. OpenAlex 文献质量提升
-**文件：** `backend/agents/tools/literature_search.py:164-193`
-**现状：** `_openalex_chunks()` 只取 `title`/`id`，不提取方法名、摘要、领域
-**目标：** 解析 OpenAlex 的 `abstract_inverted_index`、`concepts`、`methods` 等字段，提升 `method_name` 和 `data_structure` 提取质量
-**前置：** 无，Python 纯逻辑修改
+#### ~~A. OpenAlex 文献质量提升~~ ✅ 已完成（2026-04-06）
+**详见已完成项目 §8，待完善点已记录**
 
 #### B. paper-qa 接入（需要条件）
 **文件：** `backend/agents/tools/literature_search.py:114-162`
@@ -78,10 +98,8 @@
 **目标：** 实现代码执行沙箱（参考 `Phase1-Text-to-Code-Bridge-设计文档.md`）
 **风险：** 较高，涉及代码执行安全隔离
 
-#### D. 真实文件上传机制
-**文件：** `backend/core/file_validation.py`
-**现状：** 只接受绝对路径，没有 multipart 文件上传
-**目标：** 实现文件上传 API，不再依赖用户手动填绝对路径
+#### ~~D. 真实文件上传机制~~ ✅ 已完成（2026-04-06）
+**详见已完成项目 §9**
 
 ### 中优先级
 
@@ -131,10 +149,15 @@ uvicorn backend.main:app --reload
 # 运行测试
 pytest tests/ -v
 
-# 用 Zotero 真实检索测试
+# 上传文件
+curl -X POST http://127.0.0.1:8000/upload \
+  -F "files=@/path/to/data.csv" \
+  -F "files=@/path/to/paper.pdf"
+
+# 用返回的路径创建任务
 curl -X POST http://127.0.0.1:8000/tasks \
   -H "Content-Type: application/json" \
-  -d '{"task_type":"analysis","user_query":"碳排放 农业 面板数据","data_files":[],"paper_files":[]}'
+  -d '{"task_type":"analysis","user_query":"碳排放 农业 面板数据","data_files":["/abs/path/to/data.csv"],"paper_files":[]}'
 ```
 
 ---
@@ -165,3 +188,4 @@ curl -X POST http://127.0.0.1:8000/tasks \
 | `backend/core/redis_checkpointer.py` | Redis String Checkpointer（待完善） |
 | `tests/test_e2e_interrupt_flow.py` | 端到端中断流测试 |
 | `思路统筹/*.md` | 各阶段设计文档 |
+| `backend/api/routes.py` | API 路由（含 /upload 文件上传端点） |
