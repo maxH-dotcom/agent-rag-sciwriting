@@ -37,7 +37,26 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. 启动后端
+### 2. 配置 Zotero API（可选）
+
+Zotero 个人库检索需要 API Key：
+
+1. 登录 https://www.zotero.org → 设置 → Feeds/API → 创建 API Key
+2. 将 Key 写入配置：
+
+```bash
+mkdir -p ~/.research_assistant
+cat > ~/.research_assistant/zotero_config.json << 'EOF'
+{
+  "api_key": "你的API Key",
+  "note": "Zotero API Key for 智能科研工作助手"
+}
+EOF
+```
+
+不配置 Zotero 也能用（跳过 Zotero 检索，降级到 OpenAlex + fallback）。
+
+### 3. 启动后端
 
 ```bash
 uvicorn backend.main:app --reload
@@ -48,7 +67,7 @@ uvicorn backend.main:app --reload
 - API 文档: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - 健康检查: [http://127.0.0.1:8000/healthz](http://127.0.0.1:8000/healthz)
 
-### 3. 前端说明
+### 4. 前端说明
 
 前端开发已暂时冻结，当前代码已经被整理到单独目录：
 
@@ -60,7 +79,7 @@ uvicorn backend.main:app --reload
 
 所以当前主线请先专注后端联调。
 
-### 4. 如果未来要恢复前端
+### 5. 如果未来要恢复前端
 
 ```bash
 cd /Volumes/hmq/智能科研工作助手/paused-work/frontend-workbench-paused
@@ -128,7 +147,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 npm run dev
 - 单用户、本地优先
 - 单表数据优先
 - 主效应研究问题优先
-- 文献检索先用内置 fallback 和规则库，后续再接真实检索服务
+- 文献检索：Zotero 个人库 + OpenAlex API + paper-qa（本地 PDF）+ fallback 规则库，按优先级排序
 - 代码执行目前输出的是可审核分析脚本，不直接做高风险自动写文件
 
 ## 目录说明

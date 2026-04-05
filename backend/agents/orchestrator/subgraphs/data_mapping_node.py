@@ -14,7 +14,26 @@ def run(state: MainState) -> MainState:
     columns: list[str] = []
     preview: list[dict[str, str]] = []
 
-    if file_path and Path(file_path).exists() and str(file_path).endswith(".csv"):
+    if file_path:
+        if not Path(file_path).exists():
+            state["status"] = "error"
+            state["next_action"] = None
+            state["interrupt_reason"] = "data_file_not_found"
+            state["interrupt_data"] = {
+                "message": f"数据文件不存在: {file_path}",
+                "provided_path": file_path,
+                "hint": "请在创建任务时提供正确的数据文件路径",
+            }
+            return state
+        if not str(file_path).endswith(".csv"):
+            state["status"] = "error"
+            state["next_action"] = None
+            state["interrupt_reason"] = "unsupported_file_type"
+            state["interrupt_data"] = {
+                "message": f"不支持的文件类型，仅支持 CSV: {file_path}",
+                "provided_path": file_path,
+            }
+            return state
         with open(file_path, "r", encoding="utf-8-sig", newline="") as handle:
             reader = csv.DictReader(handle)
             columns = reader.fieldnames or []
@@ -23,6 +42,7 @@ def run(state: MainState) -> MainState:
                 if index >= 2:
                     break
     else:
+        # 无文件时用 fallback 列（测试场景或用户未上传数据文件）
         columns = ["年份", "地区", "农业产值", "碳排放总量", "农药使用量"]
 
     parsed = parse_question(state["user_query"], columns)

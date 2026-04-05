@@ -193,6 +193,105 @@ def _openalex_chunks(user_query: str) -> tuple[list[LiteratureChunk], str | None
     return chunks, None
 
 
+def _zotero_chunks(user_query: str) -> tuple[list[LiteratureChunk], str | None]:
+    """从用户 Zotero 个人库搜索文献。"""
+    from backend.core.config import ZOTERO_API_KEY
+
+    if not ZOTERO_API_KEY:
+        return [], "ZOTERO_API_KEY 未配置，跳过 Zotero 检索。"
+
+    import re
+
+    try:
+        # 先获取用户信息（API Key 验证 + userID）
+        from urllib.request import Request
+
+        req = Request(
+            "https://api.zotero.org/keys/" + ZOTERO_API_KEY,
+            headers={"Zotero-API-Key": ZOTERO_API_KEY},
+        )
+        with urlopen(req, timeout=5) as resp:
+            key_info = json.loads(resp.read().decode("utf-8"))
+        user_id = key_info.get("userID")
+        if not user_id:
+            return [], "Zotero API Key 用户信息无效。"
+    except Exception as exc:
+        return [], f"Zotero API Key 验证失败: {exc}"
+
+    try:
+        # 搜索用户库
+        encoded_q = quote_plus(user_query)
+        url = f"https://api.zotero.org/users/{user_id}/items?q={encoded_q}&format=json&limit=8&itemType=journalArticle"
+        req = Request(url, headers={"Zotero-API-Key": ZOTERO_API_KEY})
+        with urlopen(req, timeout=8) as resp:
+            items = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        return [], f"Zotero 库检索失败: {exc}"
+
+    chunks: list[LiteratureChunk] = []
+    for index, item in enumerate(items[:8]):
+        data = item.get("data", {})
+        title = data.get("title", "无标题")
+        creators = data.get("creators", [])
+        author_str = "; ".join(
+            f"{c.get('lastName', '')} {c.get('firstName', '')}".strip()
+            for c in creators[:3]
+            if c.get("lastName")
+        ) or "未知作者"
+        year = data.get("date", "")[:4] if data.get("date") else ""
+        abstract = data.get("abstractNote", "")[:300]
+        publication = data.get("publicationTitle", "") or data.get("bookTitle", "")
+
+        # 提取领域关键词
+        domain = "未知领域"
+        text_lower = (title + " " + abstract).lower()
+        if any(k in text_lower for k in ["carbon", "emission", "climate", "greenhouse"]):
+            domain = "碳排放/气候变化"
+        elif any(k in text_lower for k in ["agricult", "farm", "crop", "soil"]):
+            domain = "农业经济学"
+        elif any(k in text_lower for k in ["transport", "rail", "high-speed"]):
+            domain = "交通/物流"
+        elif any(k in text_lower for k in ["urban", "city", "spatial", "land"]):
+            domain = "城市/土地利用"
+
+        # 判断数据结构
+        data_structure = "待解析"
+        if abstract:
+            if any(k in abstract.lower() for k in ["panel", "固定效应", "差分", "did"]):
+                data_structure = "面板数据"
+            elif any(k in abstract.lower() for k in ["cross-section", "截面", "横截面"]):
+                data_structure = "截面数据"
+
+        text_content = title
+        if abstract:
+            text_content += f"\n\n摘要: {abstract}"
+        if publication:
+            text_content += f"\n\n期刊: {publication}"
+        if year:
+            text_content += f"\n\n年份: {year}"
+
+        chunks.append(
+            LiteratureChunk(
+                chunk_id=f"zotero_{index + 1:03d}",
+                title=title,
+                source=f"Zotero: {author_str}" + (f" ({year})" if year else ""),
+                source_type="zotero",
+                text=text_content,
+                method_name="待解析",
+                source_region="待解析",
+                source_domain=domain,
+                data_structure=data_structure,
+                relevance_score=0.88 - index * 0.04,
+                url=data.get("url") or f"https://www.zotero.org/{key_info.get('username', 'user')}/items/{data.get('key')}",
+            )
+        )
+
+    if not chunks:
+        return [], f"Zotero 库中未找到与「{user_query}」相关的文献。"
+
+    return chunks, None
+
+
 def _build_references(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     references: list[dict[str, Any]] = []
     for chunk in chunks:
@@ -229,28 +328,34 @@ def retrieve_literature(user_query: str, paper_files: list[str] | None = None) -
 
     fallback_chunks = _fallback_chunks(user_query)
     local_chunks = _local_file_chunks(paper_files)
+    zotero_chunks, zotero_warning = _zotero_chunks(user_query)
     paperqa_chunks, paperqa_warning = _paperqa_chunks(user_query, paper_files)
     openalex_chunks, openalex_warning = _openalex_chunks(user_query)
 
+    if zotero_warning:
+        warnings.append(zotero_warning)
     if paperqa_warning:
         warnings.append(paperqa_warning)
     if openalex_warning:
         warnings.append(openalex_warning)
 
-    merged_chunks = local_chunks + paperqa_chunks + openalex_chunks + fallback_chunks
+    # Zotero 库优先（用户个人 curation），其次 local_files、paperqa、openalex、fallback
+    merged_chunks = zotero_chunks + local_chunks + paperqa_chunks + openalex_chunks + fallback_chunks
     merged_chunks.sort(key=lambda chunk: chunk.relevance_score, reverse=True)
 
     chunk_dicts = [chunk.to_dict() for chunk in merged_chunks]
     top_chunks = chunk_dicts[:8]
 
     quality_score = 0.55
-    if paperqa_chunks:
-        quality_score += 0.2
-    if openalex_chunks:
+    if zotero_chunks:
         quality_score += 0.15
+    if paperqa_chunks:
+        quality_score += 0.15
+    if openalex_chunks:
+        quality_score += 0.1
     if local_chunks:
         quality_score += 0.05
-    quality_score = min(0.98, quality_score)
+    quality_score = min(0.99, quality_score)
 
     return {
         "query": user_query,
@@ -260,6 +365,7 @@ def retrieve_literature(user_query: str, paper_files: list[str] | None = None) -
         "quality_score": quality_score,
         "quality_warning": "；".join(warnings) if warnings else None,
         "source_stats": {
+            "zotero": len(zotero_chunks),
             "local_file": len(local_chunks),
             "paperqa": len(paperqa_chunks),
             "openalex": len(openalex_chunks),

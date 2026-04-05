@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from typing import Any, TYPE_CHECKING
 
 from langgraph.graph import END, START, StateGraph
 
 from backend.agents.models.state import MainState
 from backend.agents.orchestrator.main_graph import BaseResearchRuntime
 
+if TYPE_CHECKING:
+    from langgraph.checkpoint.base import BaseCheckpointSaver
+
 
 class LangGraphResearchRuntime(BaseResearchRuntime):
-    def __init__(self) -> None:
+    def __init__(self, checkpointer: "BaseCheckpointSaver | None" = None) -> None:
         super().__init__()
         self.runtime_name = "langgraph"
+        self.checkpointer = checkpointer
         self.graph = self._build_graph()
 
     def _build_graph(self):
@@ -43,7 +48,7 @@ class LangGraphResearchRuntime(BaseResearchRuntime):
                 },
             )
 
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.checkpointer)
 
     def _entry_router(self, state: MainState) -> MainState:
         return state
@@ -63,4 +68,7 @@ class LangGraphResearchRuntime(BaseResearchRuntime):
             working = self._prepare_resume(working)
             if working["status"] == "aborted":
                 return working
-        return self.graph.invoke(working)
+        config: dict[str, Any] = {}
+        if self.checkpointer is not None:
+            config = {"configurable": {"thread_id": working.get("task_id", "default")}}
+        return self.graph.invoke(working, config=config)

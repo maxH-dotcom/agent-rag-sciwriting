@@ -15,7 +15,7 @@ def test_pipeline_interrupt_sequence() -> None:
     assert state["current_node"] == "data_mapping"
     assert state["interrupt_reason"] == "data_mapping_required"
 
-    for expected_node in ["novelty", "analysis", "brief"]:
+    for expected_node in ["literature", "novelty", "analysis", "brief"]:
         state["human_decision"] = {"decision": "approved", "payload": {}}
         state = orchestrator.run_until_pause(state, resume=True)
         assert state["current_node"] == expected_node

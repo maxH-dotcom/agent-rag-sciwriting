@@ -31,7 +31,7 @@ class OrchestratorSmokeTest(unittest.TestCase):
         self.assertEqual(state["current_node"], "data_mapping")
         self.assertEqual(state["status"], "interrupted")
 
-        for expected_node in ["novelty", "analysis", "brief"]:
+        for expected_node in ["literature", "novelty", "analysis", "brief"]:
             state["human_decision"] = {"decision": "approved", "payload": {}}
             state = orchestrator.run_until_pause(state, resume=True)
             self.assertEqual(state["current_node"], expected_node)
@@ -112,7 +112,8 @@ class TaskStorePersistenceTest(unittest.TestCase):
                 )(),
             )
 
-            self.assertEqual(response["current_node"], "novelty")
+            # modified 后跳到 literature（新增了 literature 中断点）
+            self.assertEqual(response["current_node"], "literature")
             self.assertEqual(response["result"]["human_decision"]["decision"], "modified")
             self.assertEqual(response["result"]["data_mapping_result"]["dependent_var"], "自定义因变量")
             self.assertEqual(response["history"][-1]["event"], "task_continued")

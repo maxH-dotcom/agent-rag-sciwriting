@@ -10,8 +10,11 @@ def run(state: MainState) -> MainState:
         paper_files=state.get("paper_files", []),
     )
     state["current_node"] = "literature"
-    state["status"] = "running"
-    state["next_action"] = "continue_pipeline"
-    state["interrupt_reason"] = None
-    state["interrupt_data"] = None
+    state["status"] = "interrupted"
+    state["next_action"] = "await_human_confirmation"
+    state["interrupt_reason"] = "literature_review_required"
+    state["interrupt_data"] = {
+        "literature_result": state["literature_result"],
+        "message": "请审核文献检索结果，确认相关性和完整性后再继续。",
+    }
     return state

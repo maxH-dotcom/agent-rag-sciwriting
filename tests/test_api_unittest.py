@@ -96,7 +96,7 @@ class ApiLayerTest(unittest.TestCase):
         )
         self.assertEqual(continue_response.status_code, 200)
         continued = continue_response.json()
-        self.assertEqual(continued["current_node"], "novelty")
+        self.assertEqual(continued["current_node"], "literature")
         self.assertEqual(
             continued["result"]["data_mapping_result"]["dependent_var"],
             "自定义因变量",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 from backend.agents.models.state import MainState, NODE_SEQUENCE
 from backend.agents.orchestrator.subgraphs import (
@@ -57,7 +57,7 @@ class BaseResearchRuntime:
             result=None,
         )
 
-    def _next_node(self, current_node: str) -> str | None:
+    def _next_node(self, current_node: str) -> Optional[str]:
         try:
             index = NODE_SEQUENCE.index(current_node)
         except ValueError:
