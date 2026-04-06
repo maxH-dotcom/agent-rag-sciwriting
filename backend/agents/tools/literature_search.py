@@ -112,53 +112,75 @@ def _local_file_chunks(paper_files: list[str]) -> list[LiteratureChunk]:
 
 
 def _paperqa_chunks(user_query: str, paper_files: list[str]) -> tuple[list[LiteratureChunk], str | None]:
-    try:
-        from paperqa import Docs
-    except ModuleNotFoundError:
-        return [], "paper-qa 未安装，跳过本地文献语义检索。"
-
+    """通过子进程调用隔离 venv 中的 paper-qa 进行本地 PDF 语义检索。"""
     if not paper_files:
         return [], "没有提供本地论文文件，跳过 paper-qa 检索。"
 
+    # 检查是否有 LLM API key
+    has_api_key = any([
+        os.environ.get("OPENAI_API_KEY"),
+        os.environ.get("ANTHROPIC_API_KEY"),
+        os.environ.get("GROQ_API_KEY"),
+    ])
+    if not has_api_key:
+        return [], "paper-qa 需要 LLM API key（OPENAI_API_KEY / ANTHROPIC_API_KEY / GROQ_API_KEY），当前未配置。"
+
+    # 子进程调用 paper-qa wrapper
+    import subprocess
+    wrapper_path = Path(__file__).parent / "paperqa_wrapper.py"
+    venv_python = Path(__file__).parent.parent.parent.parent / ".venv-paperqa" / "bin" / "python"
+
+    if not venv_python.exists():
+        return [], f"paper-qa 隔离环境不存在: {venv_python}"
+
+    # 继承所有相关环境变量
+    env = {k: v for k, v in os.environ.items() if any(
+        k.startswith(prefix) for prefix in
+        ("OPENAI_", "ANTHROPIC_", "GROQ_", "LITELLM_", "http_", "https_", "all_proxy")
+    )}
+
     try:
-        import asyncio
+        proc = subprocess.run(
+            [str(venv_python), str(wrapper_path)],
+            input=json.dumps({"query": user_query, "paper_files": paper_files}),
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env=env,
+        )
+    except Exception as exc:
+        return [], f"paper-qa 子进程启动失败: {exc}"
 
-        async def _search() -> list[LiteratureChunk]:
-            docs = Docs()
-            for paper_file in paper_files:
-                path = Path(paper_file)
-                if path.exists():
-                    await docs.add(path.name, dir=str(path.parent))
-            result = await docs.aquery(user_query)
-            answer = getattr(result, "answer", "") or ""
-            references = getattr(result, "references", []) or []
+    if proc.returncode != 0:
+        return [], f"paper-qa 子进程错误: {proc.stderr[:200]}" if proc.stderr else "paper-qa 子进程失败"
 
-            chunks: list[LiteratureChunk] = []
-            for index, reference in enumerate(references[:5], start=1):
-                if isinstance(reference, dict):
-                    source_file = reference.get("path") or reference.get("filepath")
-                else:
-                    source_file = str(reference)
-                chunks.append(
-                    LiteratureChunk(
-                        chunk_id=f"paperqa_{index:03d}",
-                        title=Path(source_file).stem if source_file else f"paperqa_{index}",
-                        source=source_file or "paper-qa",
-                        source_type="paperqa",
-                        text=answer[:500] if answer else "paper-qa 返回了引用，但没有答案摘要。",
-                        method_name="待解析",
-                        source_region="待解析",
-                        source_domain="待解析",
-                        data_structure="待解析",
-                        relevance_score=max(0.5, 0.95 - index * 0.08),
-                        source_file=source_file,
-                    )
-                )
-            return chunks
+    try:
+        result = json.loads(proc.stdout)
+    except Exception as exc:
+        return [], f"paper-qa 输出解析失败: {exc}"
 
-        return asyncio.run(_search()), None
-    except Exception as exc:  # pragma: no cover - depends on external package/runtime
-        return [], f"paper-qa 检索失败: {exc}"
+    error = result.get("error")
+    if error:
+        return [], f"paper-qa 检索失败: {error}"
+
+    chunks_data = result.get("chunks", [])
+    chunks: list[LiteratureChunk] = []
+    for item in chunks_data:
+        chunks.append(LiteratureChunk(
+            chunk_id=item.get("chunk_id", "paperqa_unknown"),
+            title=item.get("title", "未知标题"),
+            source=item.get("source", "paper-qa"),
+            source_type="paperqa",
+            text=item.get("text", ""),
+            method_name=item.get("method_name", "待解析"),
+            source_region=item.get("source_region", "待解析"),
+            source_domain=item.get("source_domain", "待解析"),
+            data_structure=item.get("data_structure", "待解析"),
+            relevance_score=item.get("relevance_score", 0.5),
+            source_file=item.get("source_file"),
+        ))
+
+    return chunks, None
 
 
 def _reconstruct_abstract(inverted_index: dict[str, list[int]] | None) -> str:

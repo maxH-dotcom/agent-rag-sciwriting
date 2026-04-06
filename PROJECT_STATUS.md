@@ -76,6 +76,32 @@
 - 7 个新测试覆盖：auto/explicit kind、多文件、后缀校验、kind 不匹配、upload→task 完整链路
 - 28/28 测试全部通过
 
+### 10. Text-to-Code Bridge（C）
+- **证据提取**：从 `literature_result` 中提取 `EvidencePackage`，自动检测缺失面（因变量/自变量/文献/方法）
+- **代码生成**：基于数据映射 + 文献证据 + 模型推荐，生成完整可执行的 Python 分析脚本
+  - 支持 4 种方法模板：OLS 回归、Panel FE 固定效应、DID 双重差分、STIRPAT 模型
+  - 代码包含数据读取、变量准备、清洗、描述统计、回归、结构化输出 6 步完整流程
+  - 每个关键步骤绑定证据来源 (`EvidenceBinding`)
+- **安全检查**：AST 语法检查 + 正则危险操作拦截 + import 白名单
+  - 禁止 `os.system`/`subprocess`/`eval`/`exec`/`__import__`
+  - 白名单：pandas, numpy, scipy, statsmodels, sklearn, matplotlib 等分析库
+- **Subprocess 沙箱执行**：临时目录隔离 + 数据文件符号链接 + 超时保护 + 最小化环境变量
+- **analysis_node 集成**：中断数据包含代码脚本、执行结果、bridge 状态、适应性解释
+- 25 个新测试覆盖：安全检查(10)、沙箱执行(4)、证据提取(2)、代码生成(5)、Bridge 集成(2)、模型序列化(2)
+
+**待完善：**
+- 代码生成目前为规则模板，后续可接入 LLM 生成更灵活的代码
+- 沙箱执行依赖系统 Python + 已安装的分析库（pandas/statsmodels/linearmodels）
+- 执行失败时的自动重试和代码修正机制（Phase2 安全与稳定性）
+
+**新增文件：**
+| 文件 | 作用 |
+|------|------|
+| `backend/agents/models/code_generation.py` | 数据模型（EvidencePackage, GeneratedCode, ExecutionResult 等） |
+| `backend/core/sandbox.py` | 代码安全检查 + subprocess 沙箱执行 |
+| `backend/agents/orchestrator/subgraphs/text_to_code_bridge.py` | Bridge 完整流程（证据→生成→检查→执行） |
+| `tests/test_text_to_code_bridge.py` | 25 个测试用例 |
+
 ---
 
 ## 待完成项目（按优先级）
@@ -85,18 +111,28 @@
 #### ~~A. OpenAlex 文献质量提升~~ ✅ 已完成（2026-04-06）
 **详见已完成项目 §8，待完善点已记录**
 
-#### B. paper-qa 接入（需要条件）
-**文件：** `backend/agents/tools/literature_search.py:114-162`
-**现状：** `paper-qa` 未安装，`_paperqa_chunks()` 返回空
-**目标：** `pip install paperqa`，验证 PDF 语义检索
-**前置条件：** 需要有本地 PDF 论文文件才能测试解析效果
-**注意：** paper-qa 对中文 PDF 支持有限（依赖 pdfminer/pygments）
+#### B. paper-qa 接入 ✅ 已完成（2026-04-06）
+**文件：**
+- `backend/agents/tools/paperqa_wrapper.py` — 轻量级子进程 wrapper（重建）
+- `backend/agents/tools/literature_search.py` — `_paperqa_chunks()` 子进程调用
 
-#### C. Text-to-Code Bridge
-**文件：** `backend/agents/orchestrator/subgraphs/analysis_node.py`
-**现状：** `analysis_node` 只生成代码草稿字符串，不执行
-**目标：** 实现代码执行沙箱（参考 `Phase1-Text-to-Code-Bridge-设计文档.md`）
-**风险：** 较高，涉及代码执行安全隔离
+**实现方案：**
+- paper-qa 2026.3.18 安装在 `.venv-paperqa` 隔离环境中，避免与主环境 pydantic>=2 冲突
+- `paperqa_wrapper.py` 轻量架构：PyPDF 提取文本 → sentence-transformers embedding → Groq API 直调生成答案
+- 绕过了 paper-qa → LiteLLM → LiteLLMModel 的 structured-content API 兼容问题
+
+**依赖（.venv-paperqa）：**
+```
+paper-qa pillow sentence-transformers groq
+```
+
+**使用方式：**
+1. 主环境设置 `GROQ_API_KEY` 环境变量
+2. API 调用时传入 PDF 路径列表（如 `/Volumes/hmq/文献/papers/`）
+3. 子进程调用 wrapper，完成 PDF 解析 + embedding + 语义检索 + 答案生成
+
+#### ~~C. Text-to-Code Bridge~~ ✅ 已完成（2026-04-06）
+**详见已完成项目 §10**
 
 #### ~~D. 真实文件上传机制~~ ✅ 已完成（2026-04-06）
 **详见已完成项目 §9**
@@ -187,5 +223,8 @@ curl -X POST http://127.0.0.1:8000/tasks \
 | `backend/core/config.py` | 所有环境变量配置 |
 | `backend/core/redis_checkpointer.py` | Redis String Checkpointer（待完善） |
 | `tests/test_e2e_interrupt_flow.py` | 端到端中断流测试 |
+| `backend/agents/models/code_generation.py` | Text-to-Code Bridge 数据模型 |
+| `backend/core/sandbox.py` | 代码安全检查 + subprocess 沙箱 |
+| `backend/agents/orchestrator/subgraphs/text_to_code_bridge.py` | Bridge 完整流程 |
 | `思路统筹/*.md` | 各阶段设计文档 |
 | `backend/api/routes.py` | API 路由（含 /upload 文件上传端点） |
