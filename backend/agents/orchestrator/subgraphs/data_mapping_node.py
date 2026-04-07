@@ -67,6 +67,7 @@ def run(state: MainState) -> MainState:
     preview: list[dict[str, str]] = []
 
     if file_path:
+        suffix = Path(file_path).suffix.lower()
         if not Path(file_path).exists():
             state["status"] = "error"
             state["next_action"] = None
@@ -77,30 +78,44 @@ def run(state: MainState) -> MainState:
                 "hint": "请在创建任务时提供正确的数据文件路径",
             }
             return state
-        if not str(file_path).endswith(".csv"):
+        if suffix not in {".csv", ".xlsx", ".xls"}:
             state["status"] = "error"
             state["next_action"] = None
             state["interrupt_reason"] = "unsupported_file_type"
             state["interrupt_data"] = {
-                "message": f"不支持的文件类型，仅支持 CSV: {file_path}",
+                "message": f"不支持的文件类型，仅支持 CSV/XLSX/XLS: {file_path}",
                 "provided_path": file_path,
             }
             return state
-        # 使用 pandas 读取并自动转换数据类型
+
         try:
-            df_preview = pd.read_csv(file_path, nrows=3, encoding="utf-8-sig")
+            if suffix == ".csv":
+                df_preview = pd.read_csv(file_path, nrows=3, encoding="utf-8-sig")
+            else:
+                df_preview = pd.read_excel(file_path, nrows=3)
             df_preview = _infer_and_convert_dtypes(df_preview)
             columns = df_preview.columns.tolist()
             preview = df_preview.to_dict(orient="records")
-        except Exception:
-            # 回退到原始 csv 逻辑
-            with open(file_path, "r", encoding="utf-8-sig", newline="") as handle:
-                reader = csv.DictReader(handle)
-                columns = reader.fieldnames or []
-                for index, row in enumerate(reader):
-                    preview.append(row)
-                    if index >= 2:
-                        break
+        except Exception as exc:
+            if suffix == ".csv":
+                with open(file_path, "r", encoding="utf-8-sig", newline="") as handle:
+                    reader = csv.DictReader(handle)
+                    columns = reader.fieldnames or []
+                    for index, row in enumerate(reader):
+                        preview.append(row)
+                        if index >= 2:
+                            break
+            else:
+                state["status"] = "error"
+                state["next_action"] = None
+                state["interrupt_reason"] = "data_file_parse_error"
+                state["interrupt_data"] = {
+                    "message": f"无法读取 Excel 数据文件: {Path(file_path).name}",
+                    "provided_path": file_path,
+                    "detail": str(exc),
+                    "hint": "请确认文件未损坏，并已安装 openpyxl 依赖。",
+                }
+                return state
     else:
         # 无文件时用 fallback 列（测试场景或用户未上传数据文件）
         columns = ["年份", "地区", "农业产值", "碳排放总量", "农药使用量"]

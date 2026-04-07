@@ -10,6 +10,9 @@ interface TaskState {
   error: string | null;
   isPolling: boolean;
   pollingInterval: ReturnType<typeof setInterval> | null;
+  streamStatus: "idle" | "connecting" | "live" | "fallback";
+  streamError: string | null;
+  eventSource: EventSource | null;
 
   // Actions
   fetchTasks(): Promise<void>;
@@ -22,6 +25,8 @@ interface TaskState {
   }): Promise<string>;
   continueTask(id: string): Promise<void>;
   abortTask(id: string): Promise<void>;
+  connectStream(id: string): void;
+  disconnectStream(): void;
   startPolling(id: string): void;
   stopPolling(): void;
   clearError(): void;
@@ -34,6 +39,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   error: null,
   isPolling: false,
   pollingInterval: null,
+  streamStatus: "idle",
+  streamError: null,
+  eventSource: null,
 
   fetchTasks: async () => {
     set({ isLoading: true, error: null });
@@ -134,11 +142,77 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
   },
 
-  startPolling: (id: string) => {
-    const { pollingInterval, stopPolling } = get();
-    if (pollingInterval) stopPolling();
+  connectStream: (id: string) => {
+    const { eventSource, disconnectStream, stopPolling, startPolling } = get();
+    if (eventSource) disconnectStream();
 
-    set({ isPolling: true });
+    if (typeof window === "undefined" || typeof EventSource === "undefined") {
+      set({
+        streamStatus: "fallback",
+        streamError: "当前环境不支持实时连接，已切换为轮询。",
+      });
+      startPolling(id);
+      return;
+    }
+
+    stopPolling();
+    set({ streamStatus: "connecting", streamError: null });
+
+    const source = new EventSource(`${API_BASE_URL}/tasks/${id}/stream`);
+
+    source.addEventListener("task", (event) => {
+      try {
+        const task = JSON.parse(event.data) as TaskPayload;
+        set({
+          currentTask: task,
+          streamStatus: ["done", "failed", "aborted", "error"].includes(task.status) ? "idle" : "live",
+          streamError: null,
+        });
+
+        if (["done", "failed", "aborted", "error"].includes(task.status)) {
+          source.close();
+          set({ eventSource: null });
+        }
+      } catch {
+        // Ignore malformed events and keep the connection alive.
+      }
+    });
+
+    source.onopen = () => {
+      stopPolling();
+      set({ streamStatus: "live", streamError: null });
+    };
+
+    source.onerror = () => {
+      source.close();
+      set({
+        eventSource: null,
+        streamStatus: "fallback",
+        streamError: "实时连接已断开，正在回退到轮询刷新。",
+      });
+      startPolling(id);
+    };
+
+    set({ eventSource: source });
+  },
+
+  disconnectStream: () => {
+    const { eventSource } = get();
+    if (eventSource) {
+      eventSource.close();
+    }
+    set({ eventSource: null, streamStatus: "idle", streamError: null });
+  },
+
+  startPolling: (id: string) => {
+    const { pollingInterval, stopPolling, eventSource } = get();
+    if (pollingInterval) stopPolling();
+    if (eventSource) {
+      eventSource.close();
+      set({ eventSource: null });
+    }
+
+    set({ isPolling: true, streamStatus: "fallback" });
 
     // Initial fetch
     get().fetchTask(id);

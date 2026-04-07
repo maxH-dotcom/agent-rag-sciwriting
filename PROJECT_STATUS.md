@@ -1,6 +1,6 @@
 # 智能科研工作助手 - 项目状态
 
-> 最后更新：2026-04-07（前端重构）
+> 最后更新：2026-04-08（SSE 实时状态 + Excel 支持收尾）
 
 ---
 
@@ -74,6 +74,18 @@
 - 7 个新测试覆盖：auto/explicit kind、多文件、后缀校验、kind 不匹配、upload→task 完整链路
 - 28/28 测试全部通过
 
+### 13. 实时任务状态流 + Excel 数据支持（2026-04-08）
+**状态：✅ 已完成**
+
+- 后端新增 `GET /tasks/{id}/stream` SSE 端点，支持任务详情页和工作台实时订阅状态变化
+- 前端 `InterruptManager` 改为优先使用 SSE，连接失败自动回退到 3 秒轮询
+- 任务详情页新增实时连接状态展示：建立连接 / SSE 推送 / 轮询回退 / 状态已稳定
+- `data_mapping_node.py` 补齐 `.xlsx` / `.xls` 读取，避免上传支持 Excel 但分析节点只认 CSV 的断层
+- 修复 `text_to_code_bridge.py` 中 Panel FE / OLS 模板的内层 f-string 转义问题，E2E 流程恢复可跑通
+- `requirements.txt` 补齐 `pandas` 与 `openpyxl`，README 新增依赖安装步骤
+- `.gitignore` 补充 `.venv-paperqa/` 和 `scw agent mvp/venv/`，避免环境目录污染版本库
+- 新增测试覆盖：SSE 流、Excel 文件创建任务
+
 ### 10. Text-to-Code Bridge（C）
 - **证据提取**：从 `literature_result` 中提取 `EvidencePackage`，自动检测缺失面（因变量/自变量/文献/方法）
 - **代码生成**：基于数据映射 + 文献证据 + 模型推荐，生成完整可执行的 Python 分析脚本
@@ -145,7 +157,7 @@
 - `benchmark/run_evaluation.py`：重写使用 `ReportGenerator`，输出 JSON/MD/HTML 三种格式
 
 ### 12. 前端重构 v2.0（2026-04-07）
-**状态：✅ Phase 1~4 主体完成，SSE 实时通讯待后端支持**
+**状态：✅ Phase 1~4 + SSE 实时通讯已完成**
 
 **设计系统：**
 - Navy 深色主题全面替换浅色 Teal 主题（`#0F172A` 背景 + `#38BDF8` 强调）
@@ -171,7 +183,6 @@
 - 模型连接测试按钮
 
 **待后续迭代：**
-- SSE 实时通讯（需后端 `/tasks/{id}/stream` 接口支持）
 - Monaco Editor IDE（代码编辑器）
 - Variable Mapper（双栏变量映射视图）
 

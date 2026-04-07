@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { fetchTask } from "../../../../lib/api";
-import { TaskDetail } from "../../../../components/task-detail";
-import { TaskProgress } from "../../../../components/task-progress";
+import { TaskLiveDetail } from "../../../../components/task-live-detail";
 import styles from "./page.module.css";
 
 type TaskDetailPageProps = {
@@ -34,59 +33,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
         </Link>
       </div>
 
-      {/* ── Error ───────────────────────────── */}
-      {error && (
-        <div className={styles.errorBanner} role="alert">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          {error}
-        </div>
-      )}
-
-      {/* ── Task ─────────────────────────────── */}
-      {task && (
-        <>
-          {/* Progress stepper */}
-          <div className={styles.card} style={{ padding: "var(--space-xl)" }}>
-            <TaskProgress currentNode={task.current_node} status={task.status} />
-          </div>
-
-          {/* Summary card */}
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>任务摘要</h2>
-            <dl className={styles.dl}>
-              <div className={styles.dlRow}>
-                <dt>研究问题</dt>
-                <dd>{task.user_query}</dd>
-              </div>
-              <div className={styles.dlRow}>
-                <dt>状态</dt>
-                <dd>
-                  <span className={`${styles.status} ${styles[`status_${task.status}`] ?? ""}`}>
-                    {task.status}
-                  </span>
-                </dd>
-              </div>
-              <div className={styles.dlRow}>
-                <dt>当前节点</dt>
-                <dd>{task.current_node}</dd>
-              </div>
-              <div className={styles.dlRow}>
-                <dt>中断原因</dt>
-                <dd>{task.interrupt_reason || "无"}</dd>
-              </div>
-              <div className={styles.dlRow}>
-                <dt>下一步</dt>
-                <dd>{task.next_action || "无"}</dd>
-              </div>
-            </dl>
-          </div>
-
-          {/* Structured result / interrupt data */}
-          <TaskDetail task={task} />
-        </>
-      )}
+      <TaskLiveDetail taskId={params.taskId} initialTask={task} initialError={error} />
     </main>
   );
 }

@@ -10,5 +10,7 @@ build/
 .env
 .env.local
 .venv/
+.venv-paperqa/
+scw agent mvp/venv/
 
 .gstack/

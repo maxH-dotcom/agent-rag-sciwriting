@@ -1,4 +1,5 @@
 import csv
+import json
 import sys
 import tempfile
 import unittest
@@ -35,7 +36,18 @@ class ApiLayerTest(unittest.TestCase):
             writer = csv.writer(handle)
             writer.writerow(["年份", "地区", "碳排放总量", "农业产值"])
             writer.writerow([2024, "杭州", 10, 5])
+        self.excel_path = temp_path / "demo.xlsx"
         self.paper_path.write_text("paper body", encoding="utf-8")
+
+        try:
+            import pandas as pd  # type: ignore
+        except ModuleNotFoundError:
+            self.has_pandas = False
+        else:
+            self.has_pandas = True
+            pd.DataFrame(
+                [{"年份": 2024, "地区": "杭州", "碳排放总量": 10, "农业产值": 5}]
+            ).to_excel(self.excel_path, index=False)
 
         self.original_store = routes.store
         routes.store = TaskStore(
@@ -214,6 +226,55 @@ class ApiLayerTest(unittest.TestCase):
         )
         self.assertEqual(task_resp.status_code, 200)
         self.assertEqual(task_resp.json()["status"], "interrupted")
+
+    def test_task_stream_returns_sse_payload(self) -> None:
+        create_response = self.client.post(
+            "/tasks",
+            json={
+                "task_type": "analysis",
+                "user_query": "我想分析农业产值对碳排放的影响",
+                "data_files": [str(self.data_path.resolve())],
+                "paper_files": [],
+            },
+        )
+        self.assertEqual(create_response.status_code, 200)
+        task_id = create_response.json()["task_id"]
+
+        with self.client.stream("GET", f"/tasks/{task_id}/stream?once=true") as response:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.headers["content-type"].split(";")[0], "text/event-stream")
+            lines = []
+            for line in response.iter_lines():
+                if not line:
+                    break
+                lines.append(line)
+
+        self.assertTrue(any(line.startswith("event: task") for line in lines))
+        data_lines = [line for line in lines if line.startswith("data: ")]
+        self.assertTrue(data_lines)
+        payload = json.loads(data_lines[0][6:])
+        self.assertEqual(payload["task_id"], task_id)
+        self.assertEqual(payload["status"], "interrupted")
+
+    def test_create_task_with_excel_file(self) -> None:
+        if not self.has_pandas:
+            self.skipTest("pandas/openpyxl unavailable")
+
+        response = self.client.post(
+            "/tasks",
+            json={
+                "task_type": "analysis",
+                "user_query": "测试 Excel 数据文件",
+                "data_files": [str(self.excel_path.resolve())],
+                "paper_files": [],
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "interrupted")
+        columns = payload["result"]["data_mapping_result"]["columns"]
+        self.assertIn("年份", columns)
+        self.assertIn("农业产值", columns)
 
 
 if __name__ == "__main__":

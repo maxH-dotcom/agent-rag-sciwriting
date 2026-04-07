@@ -27,6 +27,7 @@
 ```bash
 cd /Volumes/hmq/智能科研工作助手
 source .venv/bin/activate
+python -m pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
@@ -110,6 +111,7 @@ EOF
 | `GET` | `/tasks/{id}` | 任务详情 |
 | `POST` | `/tasks/{id}/continue` | 继续任务（带决策） |
 | `POST` | `/tasks/{id}/abort` | 终止任务 |
+| `GET` | `/tasks/{id}/stream` | SSE 实时任务状态流 |
 | `GET` | `/tasks/{id}/history` | 任务历史 |
 | `GET` | `/tasks/{id}/checkpoints` | 中断点记录 |
 | `POST` | `/upload` | 上传数据/论文文件 |

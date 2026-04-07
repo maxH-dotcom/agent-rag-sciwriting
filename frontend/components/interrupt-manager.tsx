@@ -19,24 +19,31 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
     abortTask,
     isLoading,
     error,
-    startPolling,
+    connectStream,
+    disconnectStream,
     stopPolling,
     isPolling,
+    streamStatus,
+    streamError,
   } = useTaskStore();
 
   useEffect(() => {
     if (!taskId) return;
     fetchTask(taskId);
-    startPolling(taskId);
-    return () => stopPolling();
-  }, [taskId, fetchTask, startPolling, stopPolling]);
+    connectStream(taskId);
+    return () => {
+      disconnectStream();
+      stopPolling();
+    };
+  }, [taskId, fetchTask, connectStream, disconnectStream, stopPolling]);
 
   useEffect(() => {
-    if (currentTask && ["done", "failed", "aborted"].includes(currentTask.status)) {
+    if (currentTask && ["done", "failed", "error", "aborted"].includes(currentTask.status)) {
+      disconnectStream();
       stopPolling();
       onTaskUpdate?.();
     }
-  }, [currentTask?.status, stopPolling, onTaskUpdate]);
+  }, [currentTask?.status, disconnectStream, stopPolling, onTaskUpdate]);
 
   async function handleContinue() {
     if (!taskId) return;
@@ -94,11 +101,15 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
         <div className={styles.dlRow}>
           <dt>状态</dt>
           <dd>
-            <span className={`${sharedStyles.status} ${sharedStyles[`status_${currentTask.status}`] ?? ""}`}>
-              {isRunning && isPolling ? `${currentTask.status} (实时更新中)` : currentTask.status}
-            </span>
-          </dd>
-        </div>
+                  <span className={`${sharedStyles.status} ${sharedStyles[`status_${currentTask.status}`] ?? ""}`}>
+                    {streamStatus === "live"
+                      ? `${currentTask.status} (SSE 实时更新)`
+                      : isRunning && isPolling
+                        ? `${currentTask.status} (轮询刷新)`
+                        : currentTask.status}
+                  </span>
+                </dd>
+              </div>
         <div className={styles.dlRow}>
           <dt>中断原因</dt>
           <dd>{currentTask.interrupt_reason || "无"}</dd>
@@ -171,17 +182,21 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
       {isRunning && (
         <div className={sharedStyles.mutedText} style={{ marginTop: "var(--space-md)" }}>
           <span className={sharedStyles.spinner} aria-hidden="true" />
-          任务执行中，页面将自动更新状态...
+          {streamStatus === "connecting"
+            ? "正在建立实时连接..."
+            : streamStatus === "live"
+              ? "任务执行中，状态会实时推送到页面。"
+              : "任务执行中，页面会自动刷新状态。"}
         </div>
       )}
 
       {/* ── Error ───────────────────────────────── */}
-      {error && (
+      {(error || streamError) && (
         <div className={sharedStyles.errorText} role="alert">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          {error}
+          {error || streamError}
         </div>
       )}
 

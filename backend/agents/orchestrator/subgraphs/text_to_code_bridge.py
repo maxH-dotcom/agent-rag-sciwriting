@@ -436,7 +436,7 @@ axes[0].set_xlabel('系数')
 axes[0].set_title('OLS 回归系数')
 axes[0].axvline(x=0, color='red', linestyle='--', alpha=0.5)
 for i, (v, p) in enumerate(zip(coef_vals, [model.pvalues[n] for n in coef_names])):
-    axes[0].text(v, i, f'p={p:.3f}', va='center', fontsize=8)
+    axes[0].text(v, i, f'p={{p:.3f}}', va='center', fontsize=8)
 
 # 实际值 vs 预测值
 if len(df_clean) <= 1000:
@@ -582,8 +582,8 @@ axes[0, 1].barh(coef_names, coef_vals, color=colors_fe, alpha=0.7)
 axes[0, 1].set_xlabel('系数')
 axes[0, 1].set_title('固定效应模型系数')
 axes[0, 1].axvline(x=0, color='red', linestyle='--', alpha=0.5)
-for i, (v, p) in enumerate(zip(coef_vals, [float(model.pvalues[n]) for n in coef_names])):
-    axes[0, 1].text(v, i, f'p={p:.3f}', va='center', fontsize=8)
+    for i, (v, p) in enumerate(zip(coef_vals, [float(model.pvalues[n]) for n in coef_names])):
+        axes[0, 1].text(v, i, f'p={{p:.3f}}', va='center', fontsize=8)
 
 # 3. 省级总量趋势
 province_trend = df_clean.reset_index().groupby(time_col)[dep_var].sum()

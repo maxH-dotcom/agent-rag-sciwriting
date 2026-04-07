@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Request
+from fastapi.responses import StreamingResponse
 
 from backend.api.schemas import (
     AbortTaskRequest,
@@ -39,6 +42,7 @@ from backend.core.task_store import store
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
 router = APIRouter()
+STREAM_TERMINAL_STATUSES = {"done", "error", "aborted"}
 
 
 @router.get("/system/runtime", response_model=RuntimeInfoResponse)
@@ -201,6 +205,70 @@ def get_task(task_id: str) -> TaskResponse:
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return TaskResponse.model_validate(task)
+
+
+@router.get("/tasks/{task_id}/stream")
+async def stream_task(
+    task_id: str,
+    request: Request,
+    once: bool = Query(False, description="为测试或调试仅返回当前一帧状态"),
+) -> StreamingResponse:
+    task = store.get_task(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    async def event_generator():
+        last_fingerprint = None
+        heartbeat_interval = 15
+        idle_loops = 0
+
+        while True:
+            if await request.is_disconnected():
+                break
+
+            current = store.get_task(task_id)
+            if current is None:
+                yield "event: error\ndata: {\"detail\":\"Task not found\"}\n\n"
+                break
+
+            payload = TaskResponse.model_validate(current).model_dump(mode="json")
+            fingerprint = json.dumps(
+                {
+                    "updated_at": payload.get("updated_at"),
+                    "status": payload.get("status"),
+                    "current_node": payload.get("current_node"),
+                    "interrupt_reason": payload.get("interrupt_reason"),
+                },
+                sort_keys=True,
+                ensure_ascii=False,
+            )
+
+            if fingerprint != last_fingerprint:
+                last_fingerprint = fingerprint
+                idle_loops = 0
+                data = json.dumps(payload, ensure_ascii=False)
+                yield f"event: task\ndata: {data}\n\n"
+                if once:
+                    break
+                if payload["status"] in STREAM_TERMINAL_STATUSES:
+                    break
+            else:
+                idle_loops += 1
+                if idle_loops >= heartbeat_interval:
+                    idle_loops = 0
+                    yield ": keep-alive\n\n"
+
+            await asyncio.sleep(1)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/tasks/{task_id}/history", response_model=TaskHistoryResponse)

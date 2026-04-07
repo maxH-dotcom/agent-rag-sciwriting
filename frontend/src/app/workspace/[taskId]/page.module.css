@@ -96,6 +96,53 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.liveMeta {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.liveBadgeRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.liveBadge_live {
+  color: var(--color-accent);
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.liveBadge_connecting {
+  color: var(--color-warning);
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.liveBadge_fallback {
+  color: var(--color-text-primary);
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.liveBadge_idle {
+  color: var(--color-success);
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+}
+
 /* ── Definition list ───────────────────────────────────────── */
 .dl {
   display: grid;
@@ -151,7 +198,8 @@
 }
 
 .status_aborted,
-.status_failed {
+.status_failed,
+.status_error {
   background: rgba(239, 68, 68, 0.15);
   color: var(--color-error);
 }
@@ -186,5 +234,9 @@
   .dlRow {
     grid-template-columns: 1fr;
     gap: var(--space-xs);
+  }
+
+  .liveBadgeRow {
+    justify-content: flex-start;
   }
 }
