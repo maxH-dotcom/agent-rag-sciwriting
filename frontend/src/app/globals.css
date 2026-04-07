@@ -1,0 +1,184 @@
+/* ============================================================
+   ResearchAssistant Design System — Navy Dark Theme
+   Based on: 智能科研工作助手 UI 架构与设计规范文档 v2.0
+   Style: Micro-interactions, Navy professional
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Crimson+Pro:wght@400;500;600;700&display=swap');
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+  /* Colors — Navy Dark Theme */
+  --color-primary:      #0F172A;   /* 深邃海蓝 */
+  --color-surface:      #1E293B;   /* 卡片背景 */
+  --color-accent:       #38BDF8;   /* 天空蓝（强调/CTA/进行中） */
+  --color-background:   #0F172A;   /* 全局背景 */
+  --color-foreground:   #F8FAFC;   /* 前景文字 */
+  --color-muted:        #334155;   /* 次级面板 */
+  --color-border:       #475569;   /* 边框 */
+  --color-destructive:   #EF4444;   /* 破坏性操作 */
+  --color-ring:         #38BDF8;   /* 焦点环 */
+
+  /* Semantic */
+  --color-success:     #10B981;
+  --color-warning:     #F59E0B;
+  --color-error:       #EF4444;
+
+  /* Status */
+  --color-interrupted:  #F59E0B;
+  --color-running:      #38BDF8;
+  --color-done:         #10B981;
+  --color-aborted:      #EF4444;
+  --color-pending:      #64748B;
+
+  /* Text */
+  --color-text-primary:   #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted:    #64748B;
+  --color-text-inverse:  #0F172A;
+
+  /* Spacing */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+  --space-2xl:  48px;
+  --space-3xl:  64px;
+
+  /* Typography */
+  --font-ui:       'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-reading:  'Crimson Pro', Georgia, serif;
+  --font-heading:  var(--font-reading);
+
+  /* Shadows */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:  0 4px 6px rgba(0,0,0,0.4);
+  --shadow-lg:  0 10px 15px rgba(0,0,0,0.5);
+  --shadow-xl:  0 20px 25px rgba(0,0,0,0.6);
+
+  /* Radii */
+  --radius-sm:  6px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-2xl: 24px;
+  --radius-full: 999px;
+
+  /* Transitions */
+  --transition-fast:   100ms ease-in-out;
+  --transition-normal: 200ms ease-in-out;
+  --transition-slow:   300ms ease-in-out;
+
+  /* Z-index */
+  --z-base:    0;
+  --z-raised:  10;
+  --z-modal:   100;
+  --z-overlay: 200;
+}
+
+/* ── Reset ────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography ───────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+h1 { font-size: clamp(2rem, 5vw, 3rem); }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+h3 { font-size: clamp(1.125rem, 2vw, 1.5rem); }
+h4 { font-size: 1.125rem; }
+
+p { line-height: 1.7; }
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-normal);
+}
+
+a:hover { color: #7DD3FC; }
+
+/* ── Font utility classes ─────────────────────────────────── */
+.font-ui      { font-family: var(--font-ui); }
+.font-reading { font-family: var(--font-reading); }
+
+/* ── Selection ─────────────────────────────────────────────── */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+/* ── Focus ─────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-muted); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent); }
+
+/* ── Utility: container ───────────────────────────────────── */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.container--narrow {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+/* ── Utility: sr-only ─────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Reduced motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

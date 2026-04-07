@@ -1,8 +1,8 @@
 # 科研论文 RAG + 多 Agent 系统 MVP 实施计划
 
-> **版本**：v0.1
-> **日期**：2026-04-02
-> **状态**：待审核
+> **版本**：v1.0
+> **日期**：2026-04-07
+> **状态**：综合版 - 统一架构 + 时序图
 
 ---
 
@@ -59,66 +59,206 @@
 
 ### 2.1 整体架构图
 
+```mermaid
+flowchart TB
+    subgraph Client["前端层"]
+        FE[前端工作台<br/>Next.js 14<br/>任务入口 · 状态展示 · 中断审核 · 结果查看]
+    end
+
+    subgraph API["API 层"]
+        FastAPI[FastAPI 路由层<br/>POST /tasks · GET /tasks/{id}<br/>POST /tasks/{id}/continue · /abort]
+    end
+
+    subgraph Orchestrator["编排层 — LangGraph"]
+        LG[LangGraph 主控<br/>StateGraph + CheckpointSaver<br/>唯一编排器]
+    end
+
+    subgraph Tools["工具层"]
+        paperqa[paper-qa<br/>本地 PDF 语义检索]
+        openalex[OpenAlex API<br/>外部文献检索]
+        sandbox[代码沙箱<br/>subprocess 隔离执行]
+        duckdb[DuckDB<br/>结构化数据管理]
+    end
+
+    subgraph Nodes["六大任务节点（线性顺序）"]
+        DM[data_mapping<br/>CSV 解析<br/>变量映射<br/>⚡ 中断]
+        LIT[literature<br/>文献检索<br/>方法元信息提取<br/>⚡ 中断]
+        NOV[novelty<br/>迁移可行性评估<br/>推荐方向<br/>⚡ 中断]
+        ANA[analysis<br/>模型推荐<br/>代码生成+执行<br/>⚡ 中断]
+        BRI[brief<br/>Research Brief 汇总<br/>⚡ 中断]
+        WRI[writing<br/>论文提纲+草稿<br/>终端节点]
+    end
+
+    Client -->|"创建任务 / 查询状态 / 确认"| API
+    API -->|"run_until_pause()"| Orchestrator
+
+    Orchestrator -->|"线性顺序执行"| DM
+    DM -->|"data_mapping_result"| LIT
+    LIT -->|"literature_result"| NOV
+    NOV -->|"novelty_result"| ANA
+    ANA -->|"analysis_result"| BRI
+    BRI -->|"brief_result"| WRI
+
+    DM -.->|"数据文件解析"| duckdb
+    LIT -.->|"检索文献"| paperqa
+    LIT -.->|"补充检索"| openalex
+    ANA -.->|"代码执行"| sandbox
+
+    DM -.->|"⚡ 中断: data_mapping_required"| Client
+    LIT -.->|"⚡ 中断: literature_review_required"| Client
+    NOV -.->|"⚡ 中断: novelty_result_ready"| Client
+    ANA -.->|"⚡ 中断: code_plan_ready"| Client
+    BRI -.->|"⚡ 中断: brief_ready_for_review"| Client
+    WRI -.->|"✅ 终端: done"| Client
 ```
-用户（上传文献/数据 + 提出任务）
-           │
-           ▼
-┌─────────────────────────────────────────────┐
-│           前端工作台 (Next.js)               │
-│  任务入口 │ 状态展示 │ 中断审核 │ 结果查看   │
-└─────────────────────────────────────────────┘
-           │
-           ▼
-┌─────────────────────────────────────────────┐
-│         FastAPI 路由层 (Python)              │
-│   POST /tasks │ GET /tasks/{id} │ SSE stream │
-└─────────────────────────────────────────────┘
-           │
-           ▼
-┌─────────────────────────────────────────────┐
-│       LangGraph 主控 (唯一编排器)             │
-│         状态管理 + 路由 + 中断控制            │
-└─────────────────────────────────────────────┘
-           │
-     ┌─────┼─────┬─────────┬─────────┐
-     ▼     ▼     ▼         ▼         ▼
-  ┌────┐┌────┐┌─────┐  ┌─────┐  ┌──────┐
-  │Novel││Lit- ││Analy-│  │Brief│  │Writing│
-  │ty   ││eratu││sis   │  │Buil-│  │      │
-  │Node ││re   ││Node  │  │der  │  │Node  │
-  │     ││Node ││      │  │     │  │      │
-  └──┬──┘└──┬──┘└──┬───┘  └──┬──┘  └──┬───┘
-     │      │       │         │        │
-     ▼      ▼       ▼         ▼        ▼
-  paper-  paper-  DuckDB   Research  Draft
-  qa      qa      Code     Brief    Output
-          +       Interp           + Evidence
-       pyopenalex
-```
 
-### 2.2 五大任务节点（调整后，2026-04-04）
+> **注**：SSE 流式推送为未来特性，当前版本所有通信为请求/响应模式。
 
-| 节点 | 职责 | 输入 | 输出 |
-|------|------|------|------|
-| **Literature Node** | 文献检索 + 方法元信息提取 | 研究问题 + 关键词 | method_metadata（含迁移上下文） |
-| **Novelty Node** | 迁移/组合/调整可行性评估（决策节点） | Literature 的 method_metadata + 用户数据上下文 | transfer_assessments + 推荐方向（含迁移逻辑） |
-| **Analysis Node** | 数据分析与模型匹配 | 结构化数据 + 研究目标 | 模型推荐 + 分析代码 + 结果 |
-| **Brief Builder** | 汇总 Research_Brief（含 transfer_context） | 前4个节点结果 | 结构化研究卡片 |
-| **Writing Node** | 生成论文提纲与草稿 | Research_Brief（含迁移上下文） | 提纲 + 方法草稿 + 结果草稿 |
+### 2.2 六大任务节点（2026-04-07 统一版）
 
-### 2.3 四个中断审核点（调整后，2026-04-04）
+| 节点 | 职责 | 输入 | 输出 | 可中断 |
+|------|------|------|------|--------|
+| **data_mapping** | CSV 解析 + 变量角色映射（因变量/自变量/控制变量/面板结构检测） | 用户上传的数据文件 + user_query | `data_mapping_result`（列名/类型/映射建议） | ✅ 中断1 |
+| **literature** | 文献检索 + 方法元信息提取 | user_query + data_mapping_result | `literature_result`（method_metadata/chunks/quality_score） | ✅ 中断2 |
+| **novelty** | 迁移/组合/调整可行性评估 + 推荐方向 | literature_result + data_mapping_result | `novelty_result`（transfer_assessments/推荐方法） | ✅ 中断3 |
+| **analysis** | 模型推荐 + 证据驱动代码生成 + 沙箱执行 | novelty_result + literature_result + data_mapping_result | `analysis_result`（code_script/execution_result/bridge_status） | ✅ 中断4 |
+| **brief** | 汇总完整 Research_Brief（含 transfer_context） | 前4个节点全部结果 | `brief_result`（结构化研究卡片） | ✅ 中断5 |
+| **writing** | 生成论文提纲 + 方法/结果草稿 + 证据引用 | brief_result | `writing_result`（outline/methods/results/abstract） | ✅ 中断6 |
+
+### 2.3 六个人工审核中断点（2026-04-07 统一版）
 
 系统在关键节点暂停，等待人工确认后再继续：
 
-| 中断点 | 触发时机 | 用户决策 |
-|--------|----------|----------|
-| **数据映射中断（新增）** | 用户上传数据后自动解析 | 确认变量映射 / 修改映射 / 取消上传 |
-| **Novelty 中断** | 迁移/组合/调整评估完成（调整后内涵） | 确认迁移方向 / 修改方向 / 拒绝（终止任务） |
-| **Text-to-Code 中断** | 代码逻辑确认 + 适应性解释（新增） | 执行代码 / 修改代码 / 跳过此步 |
-| **Brief Builder 中断** | Research_Brief 编辑（含 transfer_context） | 确认Brief / 直接修改JSON |
-| **Writing 中断** | 草稿输出确认 | 接受草稿 / 修改 / 重新生成 |
+| 中断点 | `interrupt_reason` | 触发时机 | `interrupt_data` 载荷 | 用户可做决策 |
+|--------|-------------------|----------|----------------------|-------------|
+| **中断1：数据映射** | `data_mapping_required` | CSV 解析 + 变量映射完成 | 推荐的因变量/自变量/控制变量映射 | 确认 / 修改映射 / 取消上传 |
+| **中断2：文献检索** | `literature_review_required` | 文献检索 + 方法元信息提取完成 | literature_result（chunks/方法/质量分） | 确认文献 / 增删改 / 跳过 |
+| **中断3：创新性评估** | `novelty_result_ready` | 迁移/组合/调整可行性评估完成 | novelty_result（transfer_assessments/推荐方向） | 确认方向 / 修改方向 / 拒绝（终止任务） |
+| **中断4：代码方案** | `code_plan_ready` | 代码生成 + 安全检查 + 沙箱执行完成 | code_script/execution_result/bridge_status | 确认代码 / 修改代码 / 跳过此步 |
+| **中断5：Brief 确认** | `brief_ready_for_review` | Research_Brief 组装完成 | 完整 brief_result | 确认 Brief / 直接修改 JSON |
+| **中断6：草稿确认** | `draft_ready` | 论文草稿生成完成 | outline/abstract/methods/results | 确认草稿 / 修改草稿 / 重新生成 |
 
-### 2.4 项目目录结构
+### 2.5 时序图
+
+#### 2.5.1 任务创建 → 首次中断（normal flow）
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant FE as 前端
+    participant API as FastAPI
+    participant LG as LangGraph
+    participant DM as data_mapping
+    participant LIT as literature
+    participant NOV as novelty
+
+    U->>FE: 上传数据 + 发起任务
+    FE->>API: POST /tasks<br/>{user_query, data_files, paper_files}
+    API->>LG: create_initial_state() → run_until_pause()
+
+    rect rgb(240, 248, 255)
+        Note over LG,DM: 节点 1: data_mapping
+        LG->>DM: data_mapping_node.run(state)
+        DM-->>LG: state.data_mapping_result<br/>status="interrupted"<br/>interrupt_reason="data_mapping_required"
+    end
+
+    rect rgb(255, 250, 240)
+        Note over LG,LIT: 节点 2: literature（自动继续）
+        LG->>LIT: literature_node.run(state)
+        LIT-->>LG: state.literature_result<br/>status="interrupted"<br/>interrupt_reason="literature_review_required"
+    end
+
+    rect rgb(240, 255, 240)
+        Note over LG,NOV: 节点 3: novelty（自动继续）
+        LG->>NOV: novelty_node.run(state)
+        NOV-->>LG: state.novelty_result<br/>status="interrupted"<br/>interrupt_reason="novelty_result_ready"
+    end
+
+    LG-->>API: final_state (interrupted)
+    API-->>FE: TaskResponse<br/>status="interrupted"<br/>interrupt_reason="novelty_result_ready"
+    FE-->>U: 展示 novelty 中断面板<br/>（迁移评估结果 + 确认/修改/拒绝按钮）
+```
+
+#### 2.5.2 用户确认 → 继续执行（approved flow）
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant FE as 前端
+    participant API as FastAPI
+    participant LG as LangGraph
+    participant NOV as novelty
+    participant ANA as analysis
+
+    Note over U,FE: 用户已收到 novelty_result_ready 中断，已审核迁移评估
+    U->>FE: 点击"确认方向"（approved）
+    FE->>API: POST /tasks/{id}/continue<br/>{decision: "approved"}
+    API->>LG: from_task_response(task) → run_until_pause(resume=True)
+
+    rect rgb(255, 255, 240)
+        Note over LG,ANA: 从 novelty 节点恢复，继续到 analysis
+        LG->>ANA: analysis_node.run(state)<br/>current_node="analysis"<br/>human_decision={decision:"approved"}
+        ANA-->>LG: state.analysis_result<br/>status="interrupted"<br/>interrupt_reason="code_plan_ready"
+    end
+
+    LG-->>API: final_state (interrupted at analysis)
+    API-->>FE: TaskResponse<br/>status="interrupted"<br/>interrupt_reason="code_plan_ready"
+    FE-->>U: 展示 code_plan_ready 中断面板<br/>（生成的代码 + 执行结果）
+```
+
+#### 2.5.3 用户修改代码后继续（modified flow）
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant FE as 前端
+    participant API as FastAPI
+    participant LG as LangGraph
+    participant ANA as analysis
+    participant BRI as brief
+
+    Note over U,FE: 用户已收到 code_plan_ready 中断，修改了生成的代码
+    U->>FE: 点击"修改代码"（modified）<br/>payload={code_script: "修改后的代码"}
+    FE->>API: POST /tasks/{id}/continue<br/>{decision: "modified", payload: {...}}
+    API->>LG: apply_human_payload(state, payload)<br/>→ merge payload into analysis_result
+
+    rect rgb(255, 248, 240)
+        Note over LG,ANA: 修改后重新执行 analysis（用新代码）
+        LG->>ANA: analysis_node.run(state)<br/>current_node="analysis"<br/>human_decision={decision:"modified", payload:{code_script:"..."}}
+        Note right of ANA: 跳过代码生成<br/>直接用修改后的 code_script<br/>重新执行沙箱
+        ANA-->>LG: state.analysis_result (更新)<br/>status="running"
+    end
+
+    LG->>BRI: brief_builder_node.run(state)
+    BRI-->>LG: state.brief_result<br/>status="interrupted"<br/>interrupt_reason="brief_ready_for_review"
+
+    LG-->>API: final_state (interrupted at brief)
+    API-->>FE: TaskResponse<br/>status="interrupted"<br/>interrupt_reason="brief_ready_for_review"
+    FE-->>U: 展示 brief 中断面板<br/>（Research Brief 预览）
+```
+
+#### 2.5.4 用户拒绝后终止（rejected flow）
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant FE as 前端
+    participant API as FastAPI
+    participant LG as LangGraph
+
+    Note over U,FE: 用户在任意中断点点击"拒绝"
+    U->>FE: 点击"拒绝"（rejected）
+    FE->>API: POST /tasks/{id}/continue<br/>{decision: "rejected"}
+    API->>LG: run_until_pause(resume=True)
+
+    LG->>LG: _prepare_resume()<br/>decision="rejected"<br/>→ status="aborted"<br/>interrupt_reason="user_rejected_current_stage"<br/>→ 立即返回，不继续执行
+
+    LG-->>API: final_state (aborted)
+    API-->>FE: TaskResponse<br/>status="aborted"
+    FE-->>U: 任务已终止，展示终止状态
+```
+
+### 2.4 项目目录结构（修订）
 
 ```
 research-assistant/
@@ -236,7 +376,7 @@ research-assistant/
 
 ### Phase 1：核心链路打通
 
-**目标**：5 个节点全部实现，5 个中断点完整，数据流贯通
+**目标**：6 个节点全部实现，6 个中断点完整，数据流贯通
 
 **前置条件**：Phase 0 验收通过
 
@@ -245,14 +385,15 @@ research-assistant/
 - [ ] 数据文件解析（自动识别列名、数据类型）
 - [ ] 面板结构检测（地区列 + 年份列识别）
 - [ ] 变量映射 UI（用户选择因变量/自变量/控制变量）
-- [ ] 数据映射中断（Interrupt 0）
+- [ ] 数据映射中断（中断1：data_mapping_required）
 
-#### Phase 1.2：完成剩余 4 个子图
+#### Phase 1.2：完成剩余 5 个子图
 
-- [ ] Literature Subgraph（文献检索 + method_metadata 提取）
-- [ ] Novelty Subgraph（迁移/组合/调整评估）
-- [ ] Analysis Subgraph（DuckDB + Code Interpreter）
-- [ ] Writing Subgraph（生成提纲/草稿）
+- [ ] Literature Subgraph（文献检索 + method_metadata 提取） + 中断2
+- [ ] Novelty Subgraph（迁移/组合/调整评估） + 中断3
+- [ ] Analysis Subgraph（DuckDB + Code Interpreter） + 中断4
+- [ ] Brief Builder Subgraph（汇总Brief） + 中断5
+- [ ] Writing Subgraph（生成提纲/草稿） + 中断6
 
 #### Phase 1.3：Text-to-Code Bridge
 
@@ -264,9 +405,15 @@ research-assistant/
 
 定义完整的数据契约格式，支持版本管理和人工编辑（含 transfer_context）。
 
-#### Phase 1.5：完整 5 个中断点
+#### Phase 1.5：完整 6 个中断点
 
-所有中断点的前端 UI 和 API 处理（含数据映射中断）。
+所有中断点的前端 UI 和 API 处理：
+- 中断1：data_mapping_required（数据映射确认）
+- 中断2：literature_review_required（文献检索确认）
+- 中断3：novelty_result_ready（创新性评估确认）
+- 中断4：code_plan_ready（代码方案确认）
+- 中断5：brief_ready_for_review（Brief确认）
+- 中断6：draft_ready（草稿确认）
 
 #### Phase 1.6：LLM 配置持久化
 
@@ -282,7 +429,7 @@ research-assistant/
 - [ ] MCP 管理 API
 - [ ] 前端 MCP 管理 UI
 
-#### Phase 1.5：SSE 状态推送（替代轮询）
+#### Phase 1.6：SSE 状态推送（替代轮询）
 
 - [ ] `GET /tasks/{task_id}/stream` — SSE 实时推送状态变更
 - [ ] 前端 SSE 订阅

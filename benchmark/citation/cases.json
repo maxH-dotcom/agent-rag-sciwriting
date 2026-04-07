@@ -1,0 +1,184 @@
+{
+  "test_cases": [
+    {
+      "case_id": "cite_001",
+      "category": "exact_claim_match",
+      "description": "精确论断溯源",
+      "claim": "深度学习是机器学习的子领域，使用多层神经网络学习数据的层次表示。卷积神经网络在图像识别任务中取得了突破性进展。",
+      "expected_source": "chunk_002",
+      "ground_truth": {
+        "text": "深度学习是机器学习的子领域，使用多层神经网络学习数据的层次表示。卷积神经网络在图像识别任务中取得了突破性进展。",
+        "source_file": "paper_ai_survey.pdf",
+        "page_ref": "p.15"
+      }
+    },
+    {
+      "case_id": "cite_002",
+      "category": "paraphrased_claim",
+      "description": "转述论断溯源",
+      "claim": "基于Transformer的模型在自然语言处理任务中取得了突破性进展",
+      "expected_source": "chunk_007",
+      "ground_truth": {
+        "text": "BERT是基于Transformer架构的预训练语言模型，在自然语言处理任务中取得了state-of-the-art结果。",
+        "source_file": "paper_transformer.pdf",
+        "page_ref": "p.8"
+      }
+    },
+    {
+      "case_id": "cite_003",
+      "category": "method_citation",
+      "description": "方法引用溯源",
+      "claim": "卷积神经网络是深度学习的重要模型，特别适用于图像处理",
+      "expected_source": "chunk_003",
+      "ground_truth": {
+        "text": "卷积神经网络（CNN）是深度学习的重要模型，特别适用于图像处理。ResNet和VGG是经典的CNN架构。",
+        "source_file": "paper_cnn.pdf",
+        "page_ref": "p.5"
+      }
+    },
+    {
+      "case_id": "cite_004",
+      "category": "numerical_claim",
+      "description": "数值论断溯源",
+      "claim": "线性回归通过最小二乘法找到最佳拟合直线",
+      "expected_source": "chunk_004",
+      "ground_truth": {
+        "text": "线性回归是最基础的监督学习方法，通过最小二乘法找到最佳拟合直线：y = β₀ + β₁x + ε",
+        "source_file": "paper_regression.pdf",
+        "page_ref": "p.2"
+      }
+    },
+    {
+      "case_id": "cite_005",
+      "category": "drift_detection",
+      "description": "引用漂移检测",
+      "claim": "ARIMA模型是经典的时间序列预测方法",
+      "expected_source": "chunk_005",
+      "ground_truth": {
+        "text": "ARIMA模型是经典的时间序列预测方法，全称为自回归积分滑动平均模型。ARIMA(p,d,q)三个参数控制模型的特性。",
+        "source_file": "paper_arima.pdf",
+        "page_ref": "p.10"
+      },
+      "note": "如果溯源到的文本与原论断语义偏差超过阈值，应标记为 drift"
+    },
+    {
+      "case_id": "cite_006",
+      "category": "multiple_source",
+      "description": "多来源论断",
+      "claim": "时间序列分析中，趋势分解将序列拆分为趋势、季节和残差三部分",
+      "expected_source": "chunk_006",
+      "ground_truth": {
+        "text": "时间序列分析中，趋势分解将序列拆分为趋势、季节和残差三部分。STL分解是常用的方法。",
+        "source_file": "paper_ts.pdf",
+        "page_ref": "p.15"
+      }
+    },
+    {
+      "case_id": "cite_007",
+      "category": "unverifiable_claim",
+      "description": "无法溯源的论断",
+      "claim": "研究表明某方法效果很好（但文献中无对应内容）",
+      "expected_source": null,
+      "ground_truth": null,
+      "note": "系统应正确识别无法溯源的情况"
+    },
+    {
+      "case_id": "cite_008",
+      "category": "partial_citation",
+      "description": "部分引用溯源",
+      "claim": "pandas是Python中常用的数据处理库",
+      "expected_source": "chunk_011",
+      "ground_truth": {
+        "text": "数据处理管道通常包括数据加载、清洗、转换和分析等步骤。pandas是Python中常用的数据处理库。",
+        "source_file": "paper_preprocessing.pdf",
+        "page_ref": "p.5"
+      }
+    },
+    {
+      "case_id": "cite_009",
+      "category": "formula_citation",
+      "description": "公式/系数引用",
+      "claim": "Python数据分析生态包括numpy、pandas、scipy等库",
+      "expected_source": "chunk_012",
+      "ground_truth": {
+        "text": "Python数据分析生态包括numpy、pandas、scipy等库。pandas提供了DataFrame数据结构方便数据操作。",
+        "source_file": "paper_python.pdf",
+        "page_ref": "p.2"
+      }
+    },
+    {
+      "case_id": "cite_010",
+      "category": "overclaiming",
+      "description": "过度泛化检测",
+      "claim": "K-Means是一种无监督聚类算法，将数据划分为K个簇",
+      "expected_source": "chunk_013",
+      "ground_truth": {
+        "text": "K-Means是一种无监督聚类算法，将数据划分为K个簇，使得簇内平方和最小。肘部法则用于确定最优K值。",
+        "source_file": "paper_clustering.pdf",
+        "page_ref": "p.6"
+      },
+      "note": "溯源文本限定了范围，论断却泛化，应标记为 drift"
+    },
+    {
+      "case_id": "cite_011",
+      "category": "contradicting_citation",
+      "description": "矛盾引用检测",
+      "claim": "强化学习关注智能体如何在环境中通过试错学习最优策略",
+      "expected_source": "chunk_010",
+      "ground_truth": {
+        "text": "强化学习关注智能体如何在环境中通过试错学习最优策略。Q-learning和Policy Gradient是经典算法。",
+        "source_file": "paper_rl.pdf",
+        "page_ref": "p.1"
+      },
+      "note": "溯源内容与论断矛盾，drift 率应较高"
+    },
+    {
+      "case_id": "cite_012",
+      "category": "trace_chain",
+      "description": "溯源链追踪",
+      "claim": "随机森林是基于决策树的集成学习方法，通过Bagging减少方差",
+      "expected_source": "chunk_019",
+      "ground_truth": {
+        "text": "随机森林是基于决策树的集成学习方法，通过Bagging减少方差。梯度提升树（如XGBoost）通过序列化减少偏差。",
+        "source_file": "paper_ensemble.pdf",
+        "page_ref": "p.15"
+      }
+    },
+    {
+      "case_id": "cite_013",
+      "category": "page_level_precision",
+      "description": "页级精度溯源",
+      "claim": "气候变化研究关注温室气体排放对全球温度的影响",
+      "expected_source": "chunk_014",
+      "ground_truth": {
+        "text": "气候变化研究关注温室气体排放对全球温度的影响。IPCC报告指出人类活动是气候变化的主要驱动力。",
+        "source_file": "paper_climate.pdf",
+        "page_ref": "p.20"
+      }
+    },
+    {
+      "case_id": "cite_014",
+      "category": "self_citation",
+      "description": "自引用检测",
+      "claim": "碳排放与经济增长之间存在倒U型关系",
+      "expected_source": "chunk_015",
+      "ground_truth": {
+        "text": "碳排放与经济增长之间存在倒U型关系，即环境库兹涅茨曲线。发展中国家通常经历先增长后治理的过程。",
+        "source_file": "paper_carbon.pdf",
+        "page_ref": "p.45"
+      }
+    },
+    {
+      "case_id": "cite_015",
+      "category": "secondary_source",
+      "description": "二手引用检测",
+      "claim": "STIRPAT模型将人口、富裕度和技术作为主要解释变量",
+      "expected_source": "chunk_020",
+      "ground_truth": {
+        "text": "STIRPAT模型是研究碳排放驱动因素的经典方法，将人口、富裕度和技术作为主要解释变量。",
+        "source_file": "paper_stirpat.pdf",
+        "page_ref": "p.5"
+      }
+    }
+  ]
+}

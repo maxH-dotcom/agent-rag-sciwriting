@@ -1,0 +1,108 @@
+/* ── Interrupt manager ────────────────────────────────────── */
+.dl {
+  display: grid;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.dlRow {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: var(--space-md);
+  align-items: baseline;
+}
+
+.dlRow dt {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dlRow dd {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  word-break: break-all;
+}
+
+.filePaths {
+  font-family: monospace;
+  font-size: 0.8125rem;
+  background: var(--color-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  word-break: break-all;
+}
+
+/* ── Actions ──────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+/* ── Subheading ───────────────────────────────────────────── */
+.subheading {
+  font-family: var(--font-heading);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+
+/* ── Details ──────────────────────────────────────────────── */
+.details {
+  margin-top: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.detailsSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  cursor: pointer;
+  background: var(--color-muted);
+  transition: background var(--transition-normal);
+  user-select: none;
+  list-style: none;
+}
+
+.detailsSummary::-webkit-details-marker { display: none; }
+
+.detailsSummary:hover {
+  background: var(--color-border);
+}
+
+.details[open] .detailsSummary {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.details[open] .detailsSummary svg {
+  transform: rotate(180deg);
+}
+
+.detailsSummary svg {
+  transition: transform var(--transition-normal);
+}
+
+.details > pre {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dlRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-xs);
+  }
+}

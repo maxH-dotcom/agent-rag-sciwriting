@@ -1,0 +1,77 @@
+/* ── Task console sections ────────────────────────────────── */
+.sections {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+/* ── Form ─────────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+/* ── Error card ───────────────────────────────────────────── */
+.errorCard {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.errorHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--color-error);
+}
+
+.errorMessage {
+  font-size: 0.9375rem;
+  color: var(--color-error);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.errorHint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 0.875rem;
+  color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  line-height: 1.5;
+}
+
+.errorHint svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-warning);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+}

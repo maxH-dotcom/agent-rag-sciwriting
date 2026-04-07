@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 from backend.agents.models.state import MainState
-from backend.agents.tools.model_recommender import recommend_models
+from backend.agents.tools.model_recommender import recommend_models, recommend_models_by_method_preference
 from backend.agents.orchestrator.subgraphs.text_to_code_bridge import run_bridge
 
 
 def run(state: MainState) -> MainState:
     mapping = state.get("data_mapping_result", {})
     has_panel = bool(mapping.get("entity_column") and mapping.get("time_column"))
-    models = recommend_models(has_panel)
+
+    # 优先使用用户指定的方法偏好
+    method_pref = mapping.get("method_preference")
+    if method_pref:
+        models = recommend_models_by_method_preference(method_pref, has_panel)
+    else:
+        models = recommend_models(has_panel)
 
     # 运行 Text-to-Code Bridge（证据提取 → 代码生成 → 安全检查 → 沙箱执行）
     bridge_result = run_bridge(state)

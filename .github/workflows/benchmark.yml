@@ -1,0 +1,66 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  benchmark:
+    name: Run benchmark tests (${{ matrix.test-category }})
+    runs-on: macos-14
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9"]
+        test-category:
+          - retrieval
+          - text_to_code
+          - citation
+          - e2e
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-xdist
+          # 安装核心分析库（沙箱执行测试依赖）
+          pip install pandas numpy scipy statsmodels scikit-learn linearmodels matplotlib seaborn
+
+      - name: Run benchmark tests
+        run: |
+          pytest tests/test_benchmark_${{ matrix.test-category }}.py -v --tb=short
+
+  all-tests:
+    name: All tests
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-xdist
+          pip install pandas numpy scipy statsmodels scikit-learn linearmodels matplotlib seaborn
+
+      - name: Run all tests (excluding sandbox-intensive)
+        run: |
+          pytest tests/ -v --tb=short \
+            --ignore=tests/test_benchmark_text_to_code.py \
+            --ignore=tests/test_text_to_code_bridge.py

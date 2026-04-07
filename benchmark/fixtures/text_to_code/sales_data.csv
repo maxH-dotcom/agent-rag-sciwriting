@@ -1,0 +1,5 @@
+region,product,sales_q1,sales_q2,sales_q3,sales_q4
+East,Widget,100,120,140,160
+West,Widget,90,110,130,150
+East,Gadget,200,220,240,260
+West,Gadget,180,200,220,240

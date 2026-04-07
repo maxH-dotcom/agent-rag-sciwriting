@@ -1,0 +1,190 @@
+/* ── Task detail layout ────────────────────────────────────── */
+.main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg);
+  min-height: 100vh;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.taskId {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.backLink:hover {
+  background: var(--color-muted);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ── Error ─────────────────────────────────────────────────── */
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  font-size: 0.9375rem;
+  margin-bottom: var(--space-lg);
+}
+
+/* ── Grid ──────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+/* ── Card ──────────────────────────────────────────────────── */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.cardTitle {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ── Definition list ───────────────────────────────────────── */
+.dl {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.dlRow {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--space-md);
+  align-items: baseline;
+}
+
+.dlRow dt {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dlRow dd {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  word-break: break-all;
+}
+
+/* ── Status badge ──────────────────────────────────────────── */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status_interrupted {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
+}
+
+.status_done {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+}
+
+.status_running,
+.status_pending {
+  background: rgba(100, 116, 139, 0.15);
+  color: var(--color-pending);
+}
+
+.status_aborted,
+.status_failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-error);
+}
+
+/* ── Code block ────────────────────────────────────────────── */
+.codeBlock {
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  font-size: 0.8125rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 400px;
+  overflow-y: auto;
+  color: var(--color-text-primary);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .main {
+    padding: var(--space-xl) var(--space-md);
+  }
+
+  .header {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .dlRow {
+    grid-template-columns: 1fr;
+    gap: var(--space-xs);
+  }
+}

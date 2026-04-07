@@ -12,7 +12,15 @@
       "Bash(./venv/bin/python scripts/main.py)",
       "Bash(./venv/bin/python -c \"from paperqa import Docs; help\\(Docs.query\\)\")",
       "Bash(./venv/bin/python -c ':*)",
-      "Bash(./venv/bin/python -m pytest tests/test_pipeline.py -v)"
+      "Bash(./venv/bin/python -m pytest tests/test_pipeline.py -v)",
+      "mcp__paper-search-mcp__read_arxiv_paper",
+      "Read(//Volumes/hmq/智能科研工作助手/**)",
+      "Bash(python -m pytest tests/test_benchmark_*.py -v)",
+      "Bash(python -m unittest discover -s tests -p \"test_benchmark_*.py\" -v)",
+      "Bash(pip install:*)",
+      "Bash(python3 -m pip install pydantic)",
+      "Bash(/opt/homebrew/bin/pip3 install:*)",
+      "Bash(python -m unittest discover -s tests -p \"test_benchmark_*.py\")"
     ]
   }
 }

@@ -1,0 +1,124 @@
+{
+  "chunks": [
+    {
+      "chunk_id": "chunk_001",
+      "text": "机器学习是人工智能的一个分支，专注于从数据中学习规律。常见的机器学习模型包括决策树、支持向量机和神经网络。",
+      "source": "ml_intro.txt",
+      "page_ref": "p.1"
+    },
+    {
+      "chunk_id": "chunk_002",
+      "text": "深度学习是机器学习的子领域，使用多层神经网络学习数据的层次表示。卷积神经网络在图像识别任务中取得了突破性进展。",
+      "source": "dl_intro.txt",
+      "page_ref": "p.3"
+    },
+    {
+      "chunk_id": "chunk_003",
+      "text": "卷积神经网络（CNN）是深度学习的重要模型，特别适用于图像处理。ResNet和VGG是经典的CNN架构。",
+      "source": "cnn_guide.txt",
+      "page_ref": "p.5"
+    },
+    {
+      "chunk_id": "chunk_004",
+      "text": "线性回归是最基础的监督学习方法，通过最小二乘法找到最佳拟合直线：y = β₀ + β₁x + ε",
+      "source": "regression_guide.txt",
+      "page_ref": "p.2"
+    },
+    {
+      "chunk_id": "chunk_005",
+      "text": "ARIMA模型是经典的时间序列预测方法，全称为自回归积分滑动平均模型。ARIMA(p,d,q)三个参数控制模型的特性。",
+      "source": "time_series_guide.txt",
+      "page_ref": "p.10"
+    },
+    {
+      "chunk_id": "chunk_006",
+      "text": "时间序列分析中，趋势分解将序列拆分为趋势、季节和残差三部分。STL分解是常用的方法。",
+      "source": "ts_analysis.txt",
+      "page_ref": "p.15"
+    },
+    {
+      "chunk_id": "chunk_007",
+      "text": "BERT是基于Transformer架构的预训练语言模型，在自然语言处理任务中取得了state-of-the-art结果。",
+      "source": "nlp_models.txt",
+      "page_ref": "p.8"
+    },
+    {
+      "chunk_id": "chunk_008",
+      "text": "Transformer架构使用自注意力机制处理序列数据，摒弃了传统的RNN循环结构，大幅提升了并行计算效率。",
+      "source": "transformer_paper.txt",
+      "page_ref": "p.1"
+    },
+    {
+      "chunk_id": "chunk_009",
+      "text": "GPT系列是基于Transformer解码器的语言模型，通过大规模预训练和微调范式应用于各种NLP任务。",
+      "source": "gpt_paper.txt",
+      "page_ref": "p.2"
+    },
+    {
+      "chunk_id": "chunk_010",
+      "text": "强化学习关注智能体如何在环境中通过试错学习最优策略。Q-learning和Policy Gradient是经典算法。",
+      "source": "rl_intro.txt",
+      "page_ref": "p.1"
+    },
+    {
+      "chunk_id": "chunk_011",
+      "text": "数据处理管道通常包括数据加载、清洗、转换和分析等步骤。pandas是Python中常用的数据处理库。",
+      "source": "data_pipeline.txt",
+      "page_ref": "p.4"
+    },
+    {
+      "chunk_id": "chunk_012",
+      "text": "Python数据分析生态包括numpy、pandas、scipy等库。pandas提供了DataFrame数据结构方便数据操作。",
+      "source": "python_data.txt",
+      "page_ref": "p.2"
+    },
+    {
+      "chunk_id": "chunk_013",
+      "text": "K-Means是一种无监督聚类算法，将数据划分为K个簇，使得簇内平方和最小。肘部法则用于确定最优K值。",
+      "source": "clustering.txt",
+      "page_ref": "p.6"
+    },
+    {
+      "chunk_id": "chunk_014",
+      "text": "气候变化研究关注温室气体排放对全球温度的影响。IPCC报告指出人类活动是气候变化的主要驱动力。",
+      "source": "climate_study.txt",
+      "page_ref": "p.20"
+    },
+    {
+      "chunk_id": "chunk_015",
+      "text": "碳排放与经济增长之间存在倒U型关系，即环境库兹涅茨曲线。发展中国家通常经历先增长后治理的过程。",
+      "source": "carbon_econ.txt",
+      "page_ref": "p.45"
+    },
+    {
+      "chunk_id": "chunk_016",
+      "text": "R²决定系数衡量回归模型的拟合优度，取值范围0到1。R²越接近1表示模型解释能力越强。",
+      "source": "metrics.txt",
+      "page_ref": "p.12"
+    },
+    {
+      "chunk_id": "chunk_017",
+      "text": "东亚地区包括中国、日本、韩国等国家。这些国家的经济增长模式各有特点，但也存在相似之处。",
+      "source": "east_asia.txt",
+      "page_ref": "p.3"
+    },
+    {
+      "chunk_id": "chunk_018",
+      "text": "2015年至2020年间，全球可再生能源投资持续增长。太阳能发电成本在此期间下降了约50%。",
+      "source": "energy_2015_2020.txt",
+      "page_ref": "p.8"
+    },
+    {
+      "chunk_id": "chunk_019",
+      "text": "随机森林是基于决策树的集成学习方法，通过Bagging减少方差。梯度提升树（如XGBoost）通过序列化减少偏差。",
+      "source": "ensemble.txt",
+      "page_ref": "p.15"
+    },
+    {
+      "chunk_id": "chunk_020",
+      "text": "STIRPAT模型是研究碳排放驱动因素的经典方法，将人口、富裕度和技术作为主要解释变量。",
+      "source": "stirpat_paper.txt",
+      "page_ref": "p.5"
+    }
+  ]
+}

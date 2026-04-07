@@ -8,6 +8,16 @@ from pydantic import BaseModel, Field
 TaskStatus = Literal["pending", "running", "interrupted", "done", "error", "aborted"]
 
 
+class SettingsResponse(BaseModel):
+    settings: Dict[str, Any]
+    available_models: List[str]
+    sandbox_config: Dict[str, Any]
+
+
+class SettingsUpdateRequest(BaseModel):
+    updates: Dict[str, Any]
+
+
 class CreateTaskRequest(BaseModel):
     task_type: str = Field(default="analysis")
     user_query: str = Field(min_length=1, description="用户研究问题")
@@ -31,8 +41,8 @@ class TaskResponse(BaseModel):
     data_files: List[str] = Field(default_factory=list)
     paper_files: List[str] = Field(default_factory=list)
     file_manifest: Optional[Dict[str, Any]] = None
-    created_at: str
-    updated_at: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
     current_node: str
     status: TaskStatus
     next_action: Optional[str] = None
@@ -66,6 +76,13 @@ class FileUploadResponse(BaseModel):
 
 class MultiFileUploadResponse(BaseModel):
     files: List[FileUploadResponse]
+
+
+class TaskCreationError(BaseModel):
+    code: str = Field(description="错误代码")
+    message: str = Field(description="错误原因（用户可读）")
+    guidance: str = Field(description="如何修复")
+    detail: Optional[str] = Field(default=None, description="原始错误详情")
 
 
 class RuntimeInfoResponse(BaseModel):

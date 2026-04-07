@@ -1,0 +1,141 @@
+{
+  "test_cases": [
+    {
+      "case_id": "ret_001",
+      "category": "keyword_match",
+      "description": "基础关键词匹配检索",
+      "query": "机器学习 模型 训练",
+      "expected_top_chunks": ["chunk_001", "chunk_002"],
+      "required_keywords": ["机器学习", "模型"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_002",
+      "category": "semantic_recall",
+      "description": "同义词/近义词语义检索",
+      "query": "深度神经网络 图像识别",
+      "expected_top_chunks": ["chunk_003"],
+      "required_keywords": ["CNN", "图像"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_003",
+      "category": "method_retrieval",
+      "description": "特定方法/公式检索",
+      "query": "线性回归 最小二乘法 公式",
+      "expected_top_chunks": ["chunk_004"],
+      "required_keywords": ["线性回归", "最小二乘"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_004",
+      "category": "multi_keyword",
+      "description": "多关键词交叉检索",
+      "query": "时间序列 预测 ARIMA",
+      "expected_top_chunks": ["chunk_005", "chunk_006"],
+      "required_keywords": ["时间序列", "ARIMA"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_005",
+      "category": "recall_at_k",
+      "description": "Recall@5 高召回率测试",
+      "query": "自然语言处理 BERT 模型",
+      "expected_top_chunks": ["chunk_007", "chunk_008", "chunk_009"],
+      "required_keywords": ["NLP", "Transformer"],
+      "min_relevant_count": 3
+    },
+    {
+      "case_id": "ret_006",
+      "category": "precision_at_k",
+      "description": "Precision@10 高精度测试",
+      "query": "强化学习 算法",
+      "expected_top_chunks": ["chunk_010"],
+      "required_keywords": ["强化学习"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_007",
+      "category": "noisy_query",
+      "description": "模糊/不精确查询",
+      "query": "那个什么模型来着 就是处理数据的",
+      "expected_top_chunks": ["chunk_011"],
+      "required_keywords": ["数据", "模型"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_008",
+      "category": "empty_result",
+      "description": "检索无结果场景",
+      "query": "xyzabc完全不相关的查询词12345",
+      "expected_top_chunks": [],
+      "required_keywords": [],
+      "min_relevant_count": 0,
+      "note": "验证系统对空结果的优雅处理"
+    },
+    {
+      "case_id": "ret_009",
+      "category": "partial_match",
+      "description": "部分关键词匹配",
+      "query": "Python 数据分析",
+      "expected_top_chunks": ["chunk_012"],
+      "required_keywords": ["Python", "分析"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_010",
+      "category": "ranking_quality",
+      "description": "排序质量测试",
+      "query": "聚类分析 算法",
+      "expected_top_chunks": ["chunk_013"],
+      "required_keywords": ["聚类"],
+      "min_relevant_count": 1,
+      "note": "最相关结果应在 top-3"
+    },
+    {
+      "case_id": "ret_011",
+      "category": "cross_document",
+      "description": "跨文档检索（同一概念在不同文献）",
+      "query": "气候变化 影响",
+      "expected_top_chunks": ["chunk_014", "chunk_015"],
+      "required_keywords": ["气候", "变化"],
+      "min_relevant_count": 2
+    },
+    {
+      "case_id": "ret_012",
+      "category": "formula_retrieval",
+      "description": "公式/数值检索",
+      "query": "R² 决定系数 计算公式",
+      "expected_top_chunks": ["chunk_016"],
+      "required_keywords": ["R²", "决定系数"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_013",
+      "category": "regional_specific",
+      "description": "特定地区/领域检索",
+      "query": "东亚 经济增长 研究",
+      "expected_top_chunks": ["chunk_017"],
+      "required_keywords": ["东亚", "经济"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_014",
+      "category": "temporal_query",
+      "description": "时间范围查询",
+      "query": "2015年至2020年 能源研究",
+      "expected_top_chunks": ["chunk_018"],
+      "required_keywords": ["能源", "2015"],
+      "min_relevant_count": 1
+    },
+    {
+      "case_id": "ret_015",
+      "category": "comparison_retrieval",
+      "description": "对比类检索",
+      "query": "随机森林 vs 梯度提升 区别",
+      "expected_top_chunks": ["chunk_019"],
+      "required_keywords": ["随机森林", "梯度提升"],
+      "min_relevant_count": 1
+    }
+  ]
+}

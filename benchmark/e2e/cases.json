@@ -1,0 +1,238 @@
+{
+  "test_cases": [
+    {
+      "case_id": "e2e_001",
+      "task_type": "topic_novelty_check",
+      "description": "选题创新性检查",
+      "input": {
+        "user_query": "分析经济增长与环境污染的关系",
+        "existing_papers": ["paper_econ_env.pdf"],
+        "uploaded_data": "economic_panel.csv"
+      },
+      "expected_outputs": {
+        "has_novelty_score": true,
+        "novelty_score_min": 0.0,
+        "has_differentiation_points": true,
+        "human_approval_required": true
+      },
+      "evaluation_criteria": {
+        "novelty_assessment_quality": "评估应有具体依据而非泛泛而谈",
+        "citation_relevance": "引用的文献应与选题相关"
+      }
+    },
+    {
+      "case_id": "e2e_002",
+      "task_type": "analysis",
+      "description": "基础数据分析流程",
+      "input": {
+        "user_query": "计算数据的均值和标准差",
+        "uploaded_data": "simple_stats.csv",
+        "expected_method": "描述性统计"
+      },
+      "expected_outputs": {
+        "has_code_script": true,
+        "code_executed": true,
+        "has_results": true
+      },
+      "evaluation_criteria": {
+        "code_correctness": "代码逻辑正确",
+        "result_validity": "结果应与预期一致"
+      }
+    },
+    {
+      "case_id": "e2e_003",
+      "task_type": "analysis",
+      "description": "回归分析完整流程",
+      "input": {
+        "user_query": "分析X对Y的影响",
+        "uploaded_data": "regression_data.csv",
+        "expected_method": "OLS回归"
+      },
+      "expected_outputs": {
+        "has_code_script": true,
+        "code_executed": true,
+        "has_results": true,
+        "has_coefficients": true,
+        "has_evidence_binding": true
+      },
+      "evaluation_criteria": {
+        "code_correctness": "代码逻辑正确",
+        "result_validity": "结果通过验证",
+        "evidence_binding": "证据与代码绑定"
+      }
+    },
+    {
+      "case_id": "e2e_004",
+      "task_type": "interrupted_flow",
+      "description": "中断后继续流程",
+      "input": {
+        "user_query": "分析数据趋势",
+        "uploaded_data": "trend_data.csv",
+        "interrupt_at": "data_mapping",
+        "modified_payload": {
+          "dependent_var": "value",
+          "independent_vars": ["time"]
+        }
+      },
+      "expected_outputs": {
+        "resumes_at_node": "literature",
+        "completes_to_end": true
+      },
+      "evaluation_criteria": {
+        "interrupt_handling": "中断后状态正确保存",
+        "resume_correctness": "修改后正确恢复执行"
+      }
+    },
+    {
+      "case_id": "e2e_005",
+      "task_type": "rejected_abort",
+      "description": "用户拒绝后终止",
+      "input": {
+        "user_query": "某研究问题",
+        "uploaded_data": "data.csv",
+        "reject_at": "novelty"
+      },
+      "expected_outputs": {
+        "final_status": "aborted",
+        "no_result_generated": true
+      },
+      "evaluation_criteria": {
+        "abort_correctness": "拒绝后任务状态为 aborted"
+      }
+    },
+    {
+      "case_id": "e2e_006",
+      "task_type": "multi_node_approval",
+      "description": "多节点审批流程",
+      "input": {
+        "user_query": "面板数据分析",
+        "uploaded_data": "panel.csv",
+        "approve_all_nodes": true
+      },
+      "expected_outputs": {
+        "visits_all_nodes": true,
+        "node_sequence": ["data_mapping", "literature", "novelty", "analysis", "brief", "writing"],
+        "final_status": "done"
+      },
+      "evaluation_criteria": {
+        "node_coverage": "所有应经过的节点都被执行",
+        "order_correctness": "节点顺序正确"
+      }
+    },
+    {
+      "case_id": "e2e_007",
+      "task_type": "code_execution_with_viz",
+      "description": "代码执行带可视化",
+      "input": {
+        "user_query": "绘制时间序列图",
+        "uploaded_data": "ts_data.csv",
+        "expected_method": "matplotlib可视化"
+      },
+      "expected_outputs": {
+        "has_code_script": true,
+        "code_executed": true,
+        "has_chart": true,
+        "chart_format": "png"
+      },
+      "evaluation_criteria": {
+        "code_correctness": "代码能生成图表",
+        "execution_success": "执行成功无报错"
+      }
+    },
+    {
+      "case_id": "e2e_008",
+      "task_type": "data_mapping_with_confirmation",
+      "description": "数据映射人工确认",
+      "input": {
+        "user_query": "分析某变量影响因素",
+        "uploaded_data": "mapping_test.csv",
+        "columns": ["id", "region", "year", "x", "y", "z"]
+      },
+      "expected_outputs": {
+        "interrupts_at": "data_mapping",
+        "has_column_detection": true,
+        "requires_human_decision": true
+      },
+      "evaluation_criteria": {
+        "auto_detection_quality": "自动识别列名和类型",
+        "interrupt_correctness": "需要人工确认变量映射"
+      }
+    },
+    {
+      "case_id": "e2e_009",
+      "task_type": "error_recovery",
+      "description": "错误恢复与降级",
+      "input": {
+        "user_query": "执行某分析",
+        "uploaded_data": "corrupt_data.csv",
+        "introduce_error": "missing_required_column"
+      },
+      "expected_outputs": {
+        "error_handled": true,
+        "user_informed": true,
+        "task_status": "error_with_message"
+      },
+      "evaluation_criteria": {
+        "error_message_clarity": "错误信息应清晰指出问题",
+        "no_state_corruption": "错误不应污染后续状态"
+      }
+    },
+    {
+      "case_id": "e2e_010",
+      "task_type": "routing_accuracy",
+      "description": "任务类型路由准确性",
+      "input": {
+        "user_query": "判断某选题是否新颖",
+        "uploaded_data": [],
+        "paper_files": ["existing_paper.pdf"]
+      },
+      "expected_outputs": {
+        "routed_to": "novelty",
+        "correct_task_type": "topic_novelty_check"
+      },
+      "evaluation_criteria": {
+        "routing_correctness": "任务应路由到正确的节点"
+      }
+    },
+    {
+      "case_id": "e2e_011",
+      "task_type": "writing_output",
+      "description": "写作节点输出验证",
+      "input": {
+        "user_query": "完成一篇分析报告",
+        "uploaded_data": "report_data.csv",
+        "approve_all": true
+      },
+      "expected_outputs": {
+        "has_outline": true,
+        "has_methods_section": true,
+        "has_results_section": true,
+        "has_abstract": true
+      },
+      "evaluation_criteria": {
+        "output_structure": "输出结构完整",
+        "content_quality": "内容与数据和分析结果一致"
+      }
+    },
+    {
+      "case_id": "e2e_012",
+      "task_type": "checkpoint_recovery",
+      "description": "断点续跑验证",
+      "input": {
+        "user_query": "长流程分析",
+        "uploaded_data": "long_analysis.csv",
+        "interrupt_at": "analysis",
+        "simulate_restart": true
+      },
+      "expected_outputs": {
+        "recovers_to_correct_node": true,
+        "state_preserved": true,
+        "resumes_execution": true
+      },
+      "evaluation_criteria": {
+        "checkpoint_completeness": "checkpoint 保存完整状态",
+        "recovery_accuracy": "恢复后状态与中断前一致"
+      }
+    }
+  ]
+}

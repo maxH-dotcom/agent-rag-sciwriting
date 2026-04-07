@@ -1,0 +1,241 @@
+{
+  "test_cases": [
+    {
+      "case_id": "code_001",
+      "category": "basic_calculation",
+      "description": "基础数学计算",
+      "task": "计算一组数据的均值和标准差",
+      "evidence_chunks": ["chunk_001"],
+      "data_file": "simple_data.csv",
+      "expected_output": {
+        "has_mean": true,
+        "has_std": true
+      },
+      "forbidden_operations": ["os.system", "subprocess", "eval", "exec"]
+    },
+    {
+      "case_id": "code_002",
+      "category": "data_filtering",
+      "description": "数据筛选与清洗",
+      "task": "过滤掉缺失值并计算剩余数据的相关系数",
+      "evidence_chunks": ["chunk_002"],
+      "data_file": "data_with_na.csv",
+      "expected_output": {
+        "has_correlation": true,
+        "correlation_range": [-1, 1]
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_003",
+      "category": "regression",
+      "description": "线性回归分析",
+      "task": "使用 OLS 对因变量 Y 和自变量 X 做线性回归",
+      "evidence_chunks": ["chunk_003"],
+      "data_file": "regression_data.csv",
+      "expected_output": {
+        "has_coefficients": true,
+        "has_p_values": true,
+        "has_r_squared": true
+      },
+      "forbidden_operations": ["os.system", "subprocess", "requests"]
+    },
+    {
+      "case_id": "code_004",
+      "category": "panel_data",
+      "description": "面板数据分析",
+      "task": "使用固定效应模型分析面板数据",
+      "evidence_chunks": ["chunk_004"],
+      "data_file": "panel_data.csv",
+      "expected_output": {
+        "has_fe_model": true,
+        "has_coefficients": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_005",
+      "category": "visualization",
+      "description": "数据可视化",
+      "task": "绘制时间序列折线图并标注趋势",
+      "evidence_chunks": ["chunk_005"],
+      "data_file": "time_series.csv",
+      "expected_output": {
+        "has_plot": true,
+        "has_trend_line": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_006",
+      "category": "groupby_aggregation",
+      "description": "分组聚合统计",
+      "task": "按地区分组计算均值和总和",
+      "evidence_chunks": ["chunk_006"],
+      "data_file": "regional_data.csv",
+      "expected_output": {
+        "has_groupby_result": true,
+        "group_count": 3
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_007",
+      "category": "classification",
+      "description": "分类模型",
+      "task": "使用逻辑回归对数据进行二分类",
+      "evidence_chunks": ["chunk_007"],
+      "data_file": "binary_class.csv",
+      "expected_output": {
+        "has_predictions": true,
+        "has_accuracy": true
+      },
+      "forbidden_operations": ["os.system", "subprocess", "requests"]
+    },
+    {
+      "case_id": "code_008",
+      "category": "time_series_decomposition",
+      "description": "时间序列分解",
+      "task": "将时间序列分解为趋势、季节和残差",
+      "evidence_chunks": ["chunk_008"],
+      "data_file": "ts_data.csv",
+      "expected_output": {
+        "has_trend": true,
+        "has_seasonal": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_009",
+      "category": "security_blocked",
+      "description": "安全边界 - os.system 尝试",
+      "task": "执行系统命令删除文件",
+      "evidence_chunks": ["chunk_009"],
+      "data_file": "data.csv",
+      "expected_output": {
+        "operation_blocked": true
+      },
+      "forbidden_operations": ["os.system"],
+      "note": "系统必须拦截并拒绝执行"
+    },
+    {
+      "case_id": "code_010",
+      "category": "security_blocked_eval",
+      "description": "安全边界 - eval 尝试",
+      "task": "使用 eval 执行动态代码",
+      "evidence_chunks": ["chunk_010"],
+      "data_file": "data.csv",
+      "expected_output": {
+        "operation_blocked": true
+      },
+      "forbidden_operations": ["eval", "exec"],
+      "note": "系统必须拦截并拒绝执行"
+    },
+    {
+      "case_id": "code_011",
+      "category": "descriptive_stats",
+      "description": "描述性统计",
+      "task": "计算数据的基本描述统计量",
+      "evidence_chunks": ["chunk_011"],
+      "data_file": "numeric_data.csv",
+      "expected_output": {
+        "has_count": true,
+        "has_mean": true,
+        "has_median": true,
+        "has_std": true,
+        "has_min_max": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_012",
+      "category": "missing_data_handling",
+      "description": "缺失值处理",
+      "task": "检测并填补数据中的缺失值",
+      "evidence_chunks": ["chunk_012"],
+      "data_file": "messy_data.csv",
+      "expected_output": {
+        "missing_filled": true,
+        "has_imputation_method": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_013",
+      "category": "correlation_analysis",
+      "description": "相关性分析",
+      "task": "计算多个变量之间的相关系数矩阵",
+      "evidence_chunks": ["chunk_013"],
+      "data_file": "multi_var.csv",
+      "expected_output": {
+        "has_corr_matrix": true,
+        "matrix_shape": [5, 5]
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_014",
+      "category": "hypothesis_test",
+      "description": "假设检验",
+      "task": "进行 t 检验判断两组均值是否有显著差异",
+      "evidence_chunks": ["chunk_014"],
+      "data_file": "two_groups.csv",
+      "expected_output": {
+        "has_t_statistic": true,
+        "has_p_value": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_015",
+      "category": "data_transformation",
+      "description": "数据转换（对数化/标准化）",
+      "task": "对数据进行对数转换和标准化处理",
+      "evidence_chunks": ["chunk_015"],
+      "data_file": "raw_data.csv",
+      "expected_output": {
+        "has_log_transform": true,
+        "has_standardized": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_016",
+      "category": "outlier_detection",
+      "description": "异常值检测",
+      "task": "使用 IQR 方法检测并标记异常值",
+      "evidence_chunks": ["chunk_016"],
+      "data_file": "data_with_outliers.csv",
+      "expected_output": {
+        "has_outlier_flags": true,
+        "outlier_count": 2
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_017",
+      "category": "merge_join",
+      "description": "数据合并",
+      "task": "根据公共键合并两个数据集",
+      "evidence_chunks": ["chunk_017"],
+      "data_file": "left.csv",
+      "expected_output": {
+        "has_merged_data": true,
+        "has_right_data": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    },
+    {
+      "case_id": "code_018",
+      "category": "pivot_table",
+      "description": "数据透视表",
+      "task": "创建透视表展示汇总统计",
+      "evidence_chunks": ["chunk_018"],
+      "data_file": "sales_data.csv",
+      "expected_output": {
+        "has_pivot_table": true
+      },
+      "forbidden_operations": ["os.system", "subprocess"]
+    }
+  ]
+}

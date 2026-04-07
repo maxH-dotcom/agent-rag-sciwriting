@@ -1,10 +1,62 @@
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
+
+import pandas as pd
 
 from backend.agents.models.state import MainState
 from backend.agents.tools.question_parser import parse_question
+
+
+def _infer_and_convert_dtypes(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    自动检测并转换数据列类型。
+
+    规则:
+    - 年份/年度/Year 列: 转为 int (检测 "2020", "2020年", 2020.0 格式)
+    - 数值列: 转为 float
+    - 地区/Entity 列: 保持 string
+    """
+    df = df.copy()
+
+    # 年份列识别
+    year_patterns = ["年份", "年度", "Year", "year", "年"]
+    year_col = None
+    for col in df.columns:
+        col_clean = col.replace("\n", "").replace(" ", "")
+        if any(p in col_clean for p in year_patterns):
+            year_col = col
+            break
+
+    if year_col:
+        # 转换为 int
+        def parse_year(val):
+            if pd.isna(val):
+                return val
+            s = str(val).strip()
+            s = re.sub(r"[年.\s]", "", s)
+            try:
+                return int(float(s))
+            except (ValueError, TypeError):
+                return val
+
+        df[year_col] = df[year_col].apply(parse_year)
+
+    # 数值列识别 (排除明显非数值列)
+    non_numeric_cols = {"地区", "城市", "省份", "地区代码", "地区·代码", "entity", "time"}
+    for col in df.columns:
+        col_clean = col.replace("\n", "").replace(" ", "")
+        if col_clean in non_numeric_cols or col == year_col:
+            continue
+        if df[col].dtype == object:  # string 列
+            try:
+                df[col] = pd.to_numeric(df[col])
+            except (ValueError, TypeError):
+                pass  # 保持原样
+
+    return df
 
 
 def run(state: MainState) -> MainState:
@@ -34,13 +86,21 @@ def run(state: MainState) -> MainState:
                 "provided_path": file_path,
             }
             return state
-        with open(file_path, "r", encoding="utf-8-sig", newline="") as handle:
-            reader = csv.DictReader(handle)
-            columns = reader.fieldnames or []
-            for index, row in enumerate(reader):
-                preview.append(row)
-                if index >= 2:
-                    break
+        # 使用 pandas 读取并自动转换数据类型
+        try:
+            df_preview = pd.read_csv(file_path, nrows=3, encoding="utf-8-sig")
+            df_preview = _infer_and_convert_dtypes(df_preview)
+            columns = df_preview.columns.tolist()
+            preview = df_preview.to_dict(orient="records")
+        except Exception:
+            # 回退到原始 csv 逻辑
+            with open(file_path, "r", encoding="utf-8-sig", newline="") as handle:
+                reader = csv.DictReader(handle)
+                columns = reader.fieldnames or []
+                for index, row in enumerate(reader):
+                    preview.append(row)
+                    if index >= 2:
+                        break
     else:
         # 无文件时用 fallback 列（测试场景或用户未上传数据文件）
         columns = ["年份", "地区", "农业产值", "碳排放总量", "农药使用量"]
@@ -52,6 +112,7 @@ def run(state: MainState) -> MainState:
         "control_vars": parsed.control_vars,
         "entity_column": "地区" if "地区" in columns else None,
         "time_column": "年份" if "年份" in columns else None,
+        "method_preference": parsed.method_preference,
         "columns": columns,
         "preview": preview,
         "file_manifest": file_manifest,
