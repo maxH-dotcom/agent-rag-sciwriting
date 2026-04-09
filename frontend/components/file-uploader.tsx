@@ -4,26 +4,24 @@ import { useState, useRef, useCallback } from "react";
 import styles from "./file-uploader.module.css";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
-const ACCEPTED_TYPES = [".csv", ".xlsx", ".xls", ".pdf", ".txt", ".md"];
-const ACCEPTED_MIMES = [
-  "text/csv",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-excel",
-  "application/pdf",
-  "text/plain",
-  "text/markdown",
-];
+const DATA_TYPES = [".csv", ".xlsx", ".xls"];
+const PAPER_TYPES = [".pdf", ".txt", ".md"];
 
-interface UploadedFile {
+export interface UploadedFile {
   name: string;
   path: string;
   size: number;
+  kind: "data" | "paper";
+  suffix: string;
 }
 
 interface FileUploaderProps {
-  onFilePath: (path: string) => void;
+  kind: "data" | "paper";
+  onChange: (files: UploadedFile[]) => void;
   accept?: string;
   label?: string;
+  helperText?: string;
+  multiple?: boolean;
 }
 
 interface UploadState {
@@ -33,9 +31,12 @@ interface UploadState {
 }
 
 export function FileUploader({
-  onFilePath,
-  accept = ACCEPTED_TYPES.join(","),
+  kind,
+  onChange,
+  accept,
   label = "拖拽文件到此处，或点击选择",
+  helperText,
+  multiple = true,
 }: FileUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -45,6 +46,8 @@ export function FileUploader({
     error: null,
   });
   const inputRef = useRef<HTMLInputElement>(null);
+  const acceptedTypes = kind === "data" ? DATA_TYPES : PAPER_TYPES;
+  const resolvedAccept = accept ?? acceptedTypes.join(",");
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -52,15 +55,27 @@ export function FileUploader({
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
+  const syncFiles = useCallback((nextFiles: UploadedFile[]) => {
+    setUploadedFiles(nextFiles);
+    onChange(nextFiles);
+  }, [onChange]);
+
   const uploadFile = useCallback(async (file: File) => {
     setUploadState({ uploading: true, progress: 0, error: null });
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("files", file);
 
-      // Use XMLHttpRequest for progress tracking
-      const result = await new Promise<{ file_path: string }>((resolve, reject) => {
+      const result = await new Promise<{
+        files: Array<{
+          path: string;
+          name: string;
+          suffix: string;
+          size_bytes: number;
+          kind: "data" | "paper";
+        }>;
+      }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
         xhr.upload.addEventListener("progress", (e) => {
@@ -89,17 +104,28 @@ export function FileUploader({
         xhr.addEventListener("error", () => reject(new Error("网络错误")));
         xhr.addEventListener("abort", () => reject(new Error("上传已取消")));
 
-        xhr.open("POST", `${API_BASE_URL}/upload`);
+        xhr.open("POST", `${API_BASE_URL}/upload?kind=${kind}`);
         xhr.send(formData);
       });
 
+      const first = result.files[0];
+      if (!first) {
+        throw new Error("服务器未返回上传文件信息");
+      }
+
       const uploaded: UploadedFile = {
-        name: file.name,
-        path: result.file_path,
-        size: file.size,
+        name: first.name,
+        path: first.path,
+        size: first.size_bytes,
+        kind: first.kind,
+        suffix: first.suffix,
       };
-      setUploadedFiles((prev) => [...prev, uploaded]);
-      onFilePath(result.file_path);
+
+      setUploadedFiles((prev) => {
+        const nextFiles = [...prev.filter((item) => item.path !== uploaded.path), uploaded];
+        onChange(nextFiles);
+        return nextFiles;
+      });
       setUploadState({ uploading: false, progress: 100, error: null });
     } catch (err) {
       setUploadState({
@@ -108,7 +134,19 @@ export function FileUploader({
         error: err instanceof Error ? err.message : "上传失败",
       });
     }
-  }, [onFilePath]);
+  }, [kind, onChange]);
+
+  const uploadFiles = useCallback(async (files: FileList | File[]) => {
+    for (const file of Array.from(files)) {
+      const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
+      if (!acceptedTypes.includes(ext)) {
+        setUploadState({ uploading: false, progress: 0, error: `不支持的文件类型：${ext}` });
+        return;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await uploadFile(file);
+    }
+  }, [acceptedTypes, uploadFile]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -125,32 +163,26 @@ export function FileUploader({
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      const ext = "." + file.name.split(".").pop()?.toLowerCase();
-      if (!ACCEPTED_TYPES.includes(ext)) {
-        setUploadState({ uploading: false, progress: 0, error: `不支持的文件类型：${ext}` });
-        return;
-      }
-      uploadFile(file);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      uploadFiles(e.dataTransfer.files);
     }
-  }, [uploadFile]);
+  }, [uploadFiles]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      uploadFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      uploadFiles(e.target.files);
+      e.target.value = "";
     }
-  }, [uploadFile]);
+  }, [uploadFiles]);
 
   const handleRemove = (path: string) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.path !== path));
+    syncFiles(uploadedFiles.filter((file) => file.path !== path));
   };
 
   return (
     <div className={styles.container}>
-      {/* Dropzone */}
       <div
-        className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ""} ${uploadState.error ? styles.dropzoneError : ""}`}
+        className={`${styles.dropzone} ${dragActive ? styles["dropzone--active"] : ""} ${uploadState.error ? styles["dropzone--error"] : ""}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -164,7 +196,8 @@ export function FileUploader({
         <input
           ref={inputRef}
           type="file"
-          accept={accept}
+          accept={resolvedAccept}
+          multiple={multiple}
           onChange={handleChange}
           className={styles.hiddenInput}
           aria-hidden="true"
@@ -182,11 +215,10 @@ export function FileUploader({
           <strong>{label}</strong>
         </p>
         <p className={styles.dropzoneHint}>
-          支持 {ACCEPTED_TYPES.join("、")} 格式
+          {helperText ?? `支持 ${acceptedTypes.join("、")} 格式`}
         </p>
       </div>
 
-      {/* Upload progress */}
       {uploadState.uploading && (
         <div className={styles.progressContainer}>
           <div className={styles.progressBar}>
@@ -196,7 +228,6 @@ export function FileUploader({
         </div>
       )}
 
-      {/* Error */}
       {uploadState.error && (
         <div className={styles.error} role="alert">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -206,7 +237,6 @@ export function FileUploader({
         </div>
       )}
 
-      {/* Uploaded files list */}
       {uploadedFiles.length > 0 && (
         <div className={styles.fileList}>
           {uploadedFiles.map((file) => (
@@ -219,9 +249,13 @@ export function FileUploader({
               </div>
               <div className={styles.fileInfo}>
                 <p className={styles.fileName}>{file.name}</p>
-                <p className={styles.fileMeta}>{formatSize(file.size)} · {file.path}</p>
+                <p className={styles.fileMeta}>
+                  {file.kind === "data" ? "数据文件" : "论文文件"} · {file.suffix} · {formatSize(file.size)}
+                </p>
+                <p className={styles.filePath}>{file.path}</p>
               </div>
               <button
+                type="button"
                 className={styles.fileRemove}
                 onClick={() => handleRemove(file.path)}
                 aria-label={`移除文件 ${file.name}`}

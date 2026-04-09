@@ -24,6 +24,15 @@ def apply_human_payload(state: MainState, payload: dict[str, Any] | None) -> Mai
         state["analysis_result"] = current
         state["interrupt_data"] = current
 
+    elif current_node == "literature":
+        current = dict(state.get("literature_result") or {})
+        current.update(payload)
+        state["literature_result"] = current
+        state["interrupt_data"] = {
+            "literature_result": current,
+            "message": "请审核文献检索结果，确认相关性和完整性后再继续。",
+        }
+
     elif current_node == "brief":
         current = dict(state.get("brief_result") or {})
         current.update(payload)
@@ -37,4 +46,3 @@ def apply_human_payload(state: MainState, payload: dict[str, Any] | None) -> Mai
         state["interrupt_data"] = current
 
     return state
-

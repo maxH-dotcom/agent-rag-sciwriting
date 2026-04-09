@@ -582,8 +582,8 @@ axes[0, 1].barh(coef_names, coef_vals, color=colors_fe, alpha=0.7)
 axes[0, 1].set_xlabel('系数')
 axes[0, 1].set_title('固定效应模型系数')
 axes[0, 1].axvline(x=0, color='red', linestyle='--', alpha=0.5)
-    for i, (v, p) in enumerate(zip(coef_vals, [float(model.pvalues[n]) for n in coef_names])):
-        axes[0, 1].text(v, i, f'p={{p:.3f}}', va='center', fontsize=8)
+for i, (v, p) in enumerate(zip(coef_vals, [float(model.pvalues[n]) for n in coef_names])):
+    axes[0, 1].text(v, i, f'p={{p:.3f}}', va='center', fontsize=8)
 
 # 3. 省级总量趋势
 province_trend = df_clean.reset_index().groupby(time_col)[dep_var].sum()
@@ -690,7 +690,7 @@ axes[0].axvline(x=0, color='red', linestyle='--', alpha=0.5)
 for i, (v, n) in enumerate(zip(coef_vals, coef_names)):
     pval = float(model.pvalues[n])
     sig = '***' if pval < 0.01 else '**' if pval < 0.05 else '*' if pval < 0.1 else ''
-    axes[0].text(v, i, f'{{sig}}p={pval:.3f}', va='center', fontsize=8)
+    axes[0].text(v, i, f'{{sig}}p={{pval:.3f}}', va='center', fontsize=8)
 
 # 2. 处理组 vs 对照组趋势对比
 if treat_var and post_var and entity_col in df_clean.columns:

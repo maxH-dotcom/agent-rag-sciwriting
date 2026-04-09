@@ -4,11 +4,16 @@ import { useState } from "react";
 import type { TaskPayload } from "../lib/api";
 import styles from "./task-detail.module.css";
 
-// ── Result type guards ───────────────────────────────────────
-
 interface DataMappingResult {
   type: "data_mapping";
-  mappings: { source: string; target: string; dtype: string; description?: string }[];
+  dependent_var?: string | null;
+  independent_vars?: string[];
+  control_vars?: string[];
+  entity_column?: string | null;
+  time_column?: string | null;
+  method_preference?: string | null;
+  columns?: string[];
+  preview?: Array<Record<string, unknown>>;
 }
 
 interface LiteratureReviewResult {
@@ -26,16 +31,38 @@ interface LiteratureReviewResult {
 
 interface CodeGenerationResult {
   type: "code_generation";
-  language: string;
-  code: string;
-  description?: string;
-  output?: string;
+  recommended_models?: string[];
+  execution_plan?: string[];
+  adaptation_explanation?: string;
+  bridge_status?: string;
+  execution_result?: Record<string, unknown> | null;
+  result_summary?: Record<string, unknown> | null;
+  code_script?: string;
+}
+
+interface StructuredAnalysisResult {
+  method?: string;
+  n_obs?: number;
+  r_squared?: number;
+  adj_r_squared?: number;
+  r_squared_within?: number;
+  did_interaction_coef?: number | null;
+  coefficients?: Record<string, { coef?: number; pvalue?: number }>;
 }
 
 interface ResearchBriefResult {
   type: "research_brief";
-  content: string; // Markdown
   title?: string;
+  research_goal?: string;
+  method_decision?: Record<string, unknown>;
+}
+
+interface WritingResult {
+  type: "writing";
+  abstract?: string;
+  methods?: string;
+  results?: string;
+  outline?: string[];
 }
 
 type ParsedResult =
@@ -43,144 +70,320 @@ type ParsedResult =
   | LiteratureReviewResult
   | CodeGenerationResult
   | ResearchBriefResult
+  | WritingResult
   | { type: "unknown"; data: unknown };
 
 function parseResult(result: Record<string, unknown> | null): ParsedResult {
   if (!result) return { type: "unknown", data: null };
 
-  if (result.type === "data_mapping" && Array.isArray(result.mappings)) {
-    return result as unknown as DataMappingResult;
+  if (result.final_output && typeof result.final_output === "object") {
+    const finalOutput = result.final_output as Record<string, unknown>;
+    if (finalOutput.draft && typeof finalOutput.draft === "object") {
+      return { type: "writing", ...(finalOutput.draft as Record<string, unknown>) } as WritingResult;
+    }
   }
-  if (result.type === "literature_review" && Array.isArray(result.papers)) {
-    return result as unknown as LiteratureReviewResult;
+
+  if (result.analysis_result && typeof result.analysis_result === "object") {
+    return { type: "code_generation", ...(result.analysis_result as Record<string, unknown>) } as CodeGenerationResult;
   }
-  if (result.type === "code_generation" && typeof result.code === "string") {
-    return result as unknown as CodeGenerationResult;
+
+  if (result.literature_result && typeof result.literature_result === "object") {
+    const literature = result.literature_result as Record<string, unknown>;
+    return {
+      type: "literature_review",
+      papers: Array.isArray(literature.references) ? literature.references as LiteratureReviewResult["papers"] : [],
+    };
   }
-  if (result.type === "research_brief" && typeof result.content === "string") {
-    return result as unknown as ResearchBriefResult;
+
+  if (result.data_mapping_result && typeof result.data_mapping_result === "object") {
+    return { type: "data_mapping", ...(result.data_mapping_result as Record<string, unknown>) } as DataMappingResult;
+  }
+
+  if (result.brief_result && typeof result.brief_result === "object") {
+    return { type: "research_brief", ...(result.brief_result as Record<string, unknown>) } as ResearchBriefResult;
   }
 
   return { type: "unknown", data: result };
 }
 
-// ── Sub-renderers ────────────────────────────────────────────
+function DataMappingView({ result }: { result: DataMappingResult }) {
+  const metrics = [
+    { label: "因变量", value: result.dependent_var || "未确认" },
+    { label: "自变量", value: result.independent_vars?.join(", ") || "未确认" },
+    { label: "控制变量", value: result.control_vars?.join(", ") || "无" },
+    { label: "地区列", value: result.entity_column || "未确认" },
+    { label: "时间列", value: result.time_column || "未确认" },
+    { label: "方法偏好", value: result.method_preference || "无偏好" },
+  ];
 
-function DataMappingView({ mappings }: { mappings: DataMappingResult["mappings"] }) {
-  if (!mappings.length) {
-    return <div className={styles.empty}>暂无映射数据</div>;
-  }
   return (
-    <table className={styles.dataTable}>
-      <thead>
-        <tr>
-          <th>源变量</th>
-          <th>目标变量</th>
-          <th>类型</th>
-          <th>描述</th>
-        </tr>
-      </thead>
-      <tbody>
-        {mappings.map((m, i) => (
-          <tr key={i}>
-            <td><code>{m.source}</code></td>
-            <td><code>{m.target}</code></td>
-            <td><span style={{ textTransform: "capitalize" }}>{m.dtype}</span></td>
-            <td>{m.description || "—"}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-function LiteratureReviewView({ papers }: { papers: LiteratureReviewResult["papers"] }) {
-  if (!papers.length) {
-    return <div className={styles.empty}>暂无文献数据</div>;
-  }
-  return (
-    <div className={styles.litGrid}>
-      {papers.map((paper, i) => (
-        <div key={i} className={styles.litCard}>
-          <h3 className={styles.litTitle}>{paper.title}</h3>
-          <div className={styles.litMeta}>
-            {paper.year && <span className={styles.litBadge}>{paper.year}</span>}
-            {paper.journal && <span className={styles.litBadge}>{paper.journal}</span>}
-            {paper.citations !== undefined && (
-              <span className={`${styles.litBadge} ${styles.litBadgeHighlight}`}>
-                被引 {paper.citations}
-              </span>
-            )}
+    <div className={styles.resultStack}>
+      <div className={styles.metricGrid}>
+        {metrics.map((item) => (
+          <div key={item.label} className={styles.metricCard}>
+            <p className={styles.metricLabel}>{item.label}</p>
+            <p className={styles.metricValue}>{item.value}</p>
           </div>
-          {paper.abstract && <p className={styles.litAbstract}>{paper.abstract}</p>}
-          {paper.authors?.length && (
-            <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", marginTop: "var(--space-sm)" }}>
-              {paper.authors.join(", ")}
-            </p>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CodeGenerationView({ result }: { result: CodeGenerationResult }) {
-  return (
-    <div className={styles.codeBlock}>
-      <div className={styles.codeToolbar}>
-        <span className={styles.codeLang}>{result.language || "python"}</span>
-        {result.description && (
-          <span style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
-            {result.description}
-          </span>
-        )}
+        ))}
       </div>
-      <pre className={styles.codeContent}>{result.code}</pre>
-      {result.output && (
-        <div style={{ borderTop: "1px solid var(--color-border)", padding: "var(--space-md)" }}>
-          <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--color-text-muted)", marginBottom: "var(--space-sm)", textTransform: "uppercase" }}>输出</p>
-          <pre style={{ fontSize: "0.8125rem", fontFamily: "monospace", color: "var(--color-text-secondary)", whiteSpace: "pre-wrap", margin: 0 }}>{result.output}</pre>
+      {!!result.columns?.length && (
+        <div className={styles.previewScroller}>
+          <table className={styles.dataTable}>
+            <thead>
+              <tr>
+                {result.columns.map((column) => <th key={column}>{column}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {(result.preview || []).map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {result.columns?.map((column) => (
+                    <td key={`${rowIndex}-${column}`}>{String(row[column] ?? "-")}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   );
 }
 
-function MarkdownView({ content, title }: { content: string; title?: string }) {
-  // Very simple markdown renderer — renders key block elements
-  // For production, consider a library like react-markdown
-  const paragraphs = content.split(/\n\n+/);
+function LiteratureReviewView({ papers }: { papers: LiteratureReviewResult["papers"] }) {
+  if (!papers.length) return <div className={styles.empty}>暂无文献数据</div>;
 
   return (
-    <div className={styles.markdown}>
-      {title && <h1>{title}</h1>}
-      {paragraphs.map((block, i) => {
-        if (block.startsWith("# ")) return <h1 key={i}>{block.slice(2)}</h1>;
-        if (block.startsWith("## ")) return <h2 key={i}>{block.slice(3)}</h2>;
-        if (block.startsWith("### ")) return <h3 key={i}>{block.slice(4)}</h3>;
-        if (block.startsWith("- ") || block.startsWith("* ")) {
-          const items = block.split(/\n/).filter(Boolean);
-          return (
-            <ul key={i}>
-              {items.map((item, j) => <li key={j}>{item.replace(/^[-*]\s+/, "")}</li>)}
-            </ul>
-          );
-        }
-        if (/^\d+\.\s/.test(block)) {
-          const items = block.split(/\n/).filter(Boolean);
-          return (
-            <ol key={i}>
-              {items.map((item, j) => <li key={j}>{item.replace(/^\d+\.\s+/, "")}</li>)}
-            </ol>
-          );
-        }
-        if (block.startsWith("> ")) return <blockquote key={i}>{block.slice(2)}</blockquote>;
-        // Inline code and bold
-        const processed = block
-          .replace(/`([^`]+)`/g, "<code>$1</code>")
-          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-        return <p key={i} dangerouslySetInnerHTML={{ __html: processed }} />;
-      })}
+    <div className={styles.litGrid}>
+      {papers.map((paper, index) => (
+        <div key={index} className={styles.litCard}>
+          <h3 className={styles.litTitle}>{paper.title}</h3>
+          <div className={styles.litMeta}>
+            {paper.year && <span className={styles.litBadge}>{paper.year}</span>}
+            {paper.journal && <span className={styles.litBadge}>{paper.journal}</span>}
+            {paper.citations !== undefined && (
+              <span className={styles["litBadge--highlight"]}>被引 {paper.citations}</span>
+            )}
+          </div>
+          {paper.abstract && <p className={styles.litAbstract}>{paper.abstract}</p>}
+          {paper.authors?.length ? <p className={styles.authorLine}>{paper.authors.join(", ")}</p> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function extractStructuredAnalysis(executionResult: Record<string, unknown> | null | undefined): StructuredAnalysisResult | null {
+  if (!executionResult) return null;
+
+  const stdout = typeof executionResult.stdout === "string" ? executionResult.stdout : "";
+  const match = stdout.match(/\{\s*"method"[\s\S]*\}\s*$/);
+  if (match) {
+    try {
+      return JSON.parse(match[0]) as StructuredAnalysisResult;
+    } catch {
+      // fall through
+    }
+  }
+
+  if ("method" in executionResult || "coefficients" in executionResult) {
+    return executionResult as unknown as StructuredAnalysisResult;
+  }
+
+  return null;
+}
+
+function summarizeAnalysis(result: CodeGenerationResult, structured: StructuredAnalysisResult | null): string | null {
+  if (result.result_summary && typeof result.result_summary.summary_text === "string") {
+    return result.result_summary.summary_text;
+  }
+  if (!structured) return result.adaptation_explanation || null;
+
+  const coefficients = structured.coefficients || {};
+  const keyEntry = Object.entries(coefficients).find(([name]) => name !== "const");
+  const [keyName, keyValue] = keyEntry || [];
+  const coef = keyValue?.coef;
+  const pvalue = keyValue?.pvalue;
+  const direction = typeof coef === "number" ? (coef > 0 ? "正向" : coef < 0 ? "负向" : "接近于零") : null;
+  const significance = typeof pvalue === "number"
+    ? (pvalue < 0.01 ? "在 1% 水平显著" : pvalue < 0.05 ? "在 5% 水平显著" : pvalue < 0.1 ? "在 10% 水平边际显著" : "统计上不显著")
+    : null;
+
+  const summaryParts = [
+    structured.method ? `当前模型为 ${structured.method}` : null,
+    typeof structured.n_obs === "number" ? `样本量 ${structured.n_obs}` : null,
+    typeof structured.r_squared === "number"
+      ? `R²=${structured.r_squared.toFixed(4)}`
+      : typeof structured.r_squared_within === "number"
+        ? `组内 R²=${structured.r_squared_within.toFixed(4)}`
+        : null,
+  ].filter(Boolean);
+
+  if (keyName && direction) {
+    summaryParts.push(`${keyName} 对结果变量呈${direction}影响`);
+  }
+  if (significance) {
+    summaryParts.push(significance);
+  }
+
+  return summaryParts.length > 0 ? `${summaryParts.join("，")}。` : (result.adaptation_explanation || null);
+}
+
+function CodeGenerationView({ result }: { result: CodeGenerationResult }) {
+  const structured = (result.result_summary as StructuredAnalysisResult | null) ?? extractStructuredAnalysis(result.execution_result);
+  const summary = summarizeAnalysis(result, structured);
+  const coefficientRows = structured?.coefficients
+    ? Object.entries(structured.coefficients).filter(([name]) => name !== "const").slice(0, 6)
+    : [];
+
+  return (
+    <div className={styles.resultStack}>
+      <div className={styles.metricGrid}>
+        <div className={styles.metricCard}>
+          <p className={styles.metricLabel}>桥接状态</p>
+          <p className={styles.metricValue}>{result.bridge_status || "未知"}</p>
+        </div>
+        <div className={styles.metricCard}>
+          <p className={styles.metricLabel}>推荐模型</p>
+          <p className={styles.metricValue}>{result.recommended_models?.join(", ") || "暂无"}</p>
+        </div>
+      </div>
+      {summary && (
+        <div className={styles.summaryCard}>
+          <p className={styles.metricLabel}>结果摘要</p>
+          <p className={styles.summaryText}>{summary}</p>
+        </div>
+      )}
+      {structured && (
+        <div className={styles.metricGrid}>
+          {typeof structured.n_obs === "number" ? (
+            <div className={styles.metricCard}>
+              <p className={styles.metricLabel}>样本量</p>
+              <p className={styles.metricValue}>{structured.n_obs}</p>
+            </div>
+          ) : null}
+          {typeof structured.r_squared === "number" ? (
+            <div className={styles.metricCard}>
+              <p className={styles.metricLabel}>R²</p>
+              <p className={styles.metricValue}>{structured.r_squared.toFixed(4)}</p>
+            </div>
+          ) : null}
+          {typeof structured.r_squared_within === "number" ? (
+            <div className={styles.metricCard}>
+              <p className={styles.metricLabel}>组内 R²</p>
+              <p className={styles.metricValue}>{structured.r_squared_within.toFixed(4)}</p>
+            </div>
+          ) : null}
+          {typeof structured.did_interaction_coef === "number" ? (
+            <div className={styles.metricCard}>
+              <p className={styles.metricLabel}>DID 交互项系数</p>
+              <p className={styles.metricValue}>{structured.did_interaction_coef.toFixed(4)}</p>
+            </div>
+          ) : null}
+        </div>
+      )}
+      {!!coefficientRows.length && (
+        <div className={styles.summaryCard}>
+          <p className={styles.metricLabel}>核心系数</p>
+          <div className={styles.coefficientList}>
+            {coefficientRows.map(([name, value]) => (
+              <div key={name} className={styles.coefficientItem}>
+                <span className={styles.coefficientName}>{name}</span>
+                <span className={styles.coefficientMeta}>
+                  coef={typeof value.coef === "number" ? value.coef.toFixed(4) : "-"}
+                  {" · "}
+                  p={typeof value.pvalue === "number" ? value.pvalue.toFixed(4) : "-"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {!!result.execution_plan?.length && (
+        <div className={styles.summaryCard}>
+          <p className={styles.metricLabel}>执行步骤</p>
+          <ol className={styles.list}>
+            {result.execution_plan.map((item, index) => <li key={index}>{item}</li>)}
+          </ol>
+        </div>
+      )}
+      {result.execution_result && (
+        <details className={styles.codeBlock}>
+          <summary className={styles.codeToolbar}>
+            <span className={styles.codeLang}>执行回执</span>
+          </summary>
+          <pre className={styles.codeContent}>{JSON.stringify(result.execution_result, null, 2)}</pre>
+        </details>
+      )}
+      {result.code_script && (
+        <details className={styles.codeBlock}>
+          <summary className={styles.codeToolbar}>
+            <span className={styles.codeLang}>python</span>
+            <span className={styles.codeHint}>代码作为附属信息折叠展示</span>
+          </summary>
+          <pre className={styles.codeContent}>{result.code_script}</pre>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function BriefView({ result }: { result: ResearchBriefResult }) {
+  const models = Array.isArray(result.method_decision?.recommended_models)
+    ? result.method_decision?.recommended_models as string[]
+    : [];
+
+  return (
+    <div className={styles.resultStack}>
+      <div className={styles.metricGrid}>
+        <div className={styles.metricCard}>
+          <p className={styles.metricLabel}>研究目标</p>
+          <p className={styles.metricValue}>{result.research_goal || result.title || "未提供"}</p>
+        </div>
+        <div className={styles.metricCard}>
+          <p className={styles.metricLabel}>候选模型</p>
+          <p className={styles.metricValue}>{models.join(", ") || "未提供"}</p>
+        </div>
+      </div>
+      <details className={styles.codeBlock}>
+        <summary className={styles.codeToolbar}>
+          <span className={styles.codeLang}>研究简报 JSON</span>
+        </summary>
+        <pre className={styles.codeContent}>{JSON.stringify(result, null, 2)}</pre>
+      </details>
+    </div>
+  );
+}
+
+function WritingView({ result }: { result: WritingResult }) {
+  return (
+    <div className={styles.resultStack}>
+      {result.abstract && (
+        <div className={styles.summaryCard}>
+          <p className={styles.metricLabel}>摘要草稿</p>
+          <p className={styles.summaryText}>{result.abstract}</p>
+        </div>
+      )}
+      {result.methods && (
+        <div className={styles.summaryCard}>
+          <p className={styles.metricLabel}>方法说明</p>
+          <p className={styles.summaryText}>{result.methods}</p>
+        </div>
+      )}
+      {result.results && (
+        <div className={styles.summaryCard}>
+          <p className={styles.metricLabel}>结果摘要</p>
+          <p className={styles.summaryText}>{result.results}</p>
+        </div>
+      )}
+      {!!result.outline?.length && (
+        <div className={styles.summaryCard}>
+          <p className={styles.metricLabel}>论文提纲</p>
+          <ol className={styles.list}>
+            {result.outline.map((item, index) => <li key={index}>{item}</li>)}
+          </ol>
+        </div>
+      )}
     </div>
   );
 }
@@ -189,17 +392,8 @@ function UnknownView({ data }: { data: unknown }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <>
-      <div style={{ padding: "var(--space-md) var(--space-lg)", color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-        未知结果类型，使用原始 JSON 展示
-      </div>
-      <button
-        className={styles.jsonToggle}
-        onClick={() => setExpanded(!expanded)}
-        aria-expanded={expanded}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+      <div className={styles.empty}>未知结果类型，使用原始 JSON 展示</div>
+      <button className={styles.jsonToggle} onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>
         {expanded ? "收起" : "展开"} 原始 JSON
       </button>
       {expanded && (
@@ -211,118 +405,139 @@ function UnknownView({ data }: { data: unknown }) {
   );
 }
 
-// ── Main component ───────────────────────────────────────────
+function InterruptDataView({ task }: { task: TaskPayload }) {
+  const data = task.interrupt_data as Record<string, unknown>;
+
+  if (!data) {
+    return <div className={styles.empty}>当前没有中断数据</div>;
+  }
+
+  if (task.interrupt_reason === "data_mapping_required") {
+    return <DataMappingView result={{ type: "data_mapping", ...((data.recommended_mapping as Record<string, unknown>) || {}) } as DataMappingResult} />;
+  }
+
+  if (task.interrupt_reason === "literature_review_required") {
+    const literature = (data.literature_result as Record<string, unknown>) || {};
+    return (
+      <div className={styles.resultStack}>
+        <LiteratureReviewView papers={Array.isArray(literature.references) ? literature.references as LiteratureReviewResult["papers"] : []} />
+        {"quality_warning" in literature && literature.quality_warning ? (
+          <div className={styles.summaryCard}>
+            <p className={styles.metricLabel}>质量提醒</p>
+            <p className={styles.summaryText}>{String(literature.quality_warning)}</p>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (task.interrupt_reason === "novelty_result_ready") {
+    const novelty = data;
+    const transfer = Array.isArray(novelty.transfer_assessments) ? novelty.transfer_assessments[0] as Record<string, unknown> : null;
+    return (
+      <div className={styles.resultStack}>
+        <div className={styles.metricGrid}>
+          <div className={styles.metricCard}>
+            <p className={styles.metricLabel}>推荐方法</p>
+            <p className={styles.metricValue}>{String(transfer?.method_name || "未提供")}</p>
+          </div>
+          <div className={styles.metricCard}>
+            <p className={styles.metricLabel}>迁移可行性</p>
+            <p className={styles.metricValue}>{String(transfer?.transfer_feasibility || "未提供")}</p>
+          </div>
+        </div>
+        {"recommended_direction" in novelty ? (
+          <div className={styles.summaryCard}>
+            <p className={styles.metricLabel}>推荐方向</p>
+            <p className={styles.summaryText}>{String(((novelty.recommended_direction as Record<string, unknown>) || {}).summary || "未提供")}</p>
+          </div>
+        ) : null}
+        {Array.isArray(novelty.differentiation_points) ? (
+          <div className={styles.summaryCard}>
+            <p className={styles.metricLabel}>差异化要点</p>
+            <ol className={styles.list}>
+              {(novelty.differentiation_points as string[]).map((item, index) => <li key={index}>{item}</li>)}
+            </ol>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (task.interrupt_reason === "code_plan_ready") {
+    return <CodeGenerationView result={{ type: "code_generation", ...(data as Record<string, unknown>) } as CodeGenerationResult} />;
+  }
+
+  if (task.interrupt_reason === "brief_ready_for_review") {
+    return <BriefView result={{ type: "research_brief", ...(data as Record<string, unknown>) } as ResearchBriefResult} />;
+  }
+
+  return (
+    <div className={styles.jsonContent}>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
 
 interface TaskDetailProps {
   task: TaskPayload;
 }
 
 export function TaskDetail({ task }: TaskDetailProps) {
-  const [activeTab, setActiveTab] = useState<string>("result");
-
+  const [activeTab, setActiveTab] = useState("result");
   const parsed = parseResult(task.result ?? null);
-
-  // Determine available tabs
-  const availableTabs: { id: string; label: string; icon: JSX.Element }[] = [
-    {
-      id: "result",
-      label: "结果",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-      ),
-    },
-  ];
+  const availableTabs = [{ id: "result", label: "结果" }];
 
   if (task.interrupt_data) {
-    availableTabs.push({
-      id: "interrupt",
-      label: "中断数据",
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-      ),
-    });
+    availableTabs.push({ id: "interrupt", label: "中断数据" });
   }
 
   return (
     <div className={styles.container}>
-      {/* Tab bar */}
       <div className={styles.tabBar} role="tablist">
         {availableTabs.map((tab) => (
           <button
             key={tab.id}
             role="tab"
             aria-selected={activeTab === tab.id}
-            className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ""}`}
+            className={`${styles.tab} ${activeTab === tab.id ? styles["tab--active"] : ""}`}
             onClick={() => setActiveTab(tab.id)}
           >
-            {tab.icon}
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Result section */}
       {activeTab === "result" && (
         <div className={styles.section} role="tabpanel">
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-              </svg>
               {parsed.type === "data_mapping" ? "数据映射结果"
-               : parsed.type === "literature_review" ? "文献综述结果"
-               : parsed.type === "code_generation" ? "代码生成结果"
-               : parsed.type === "research_brief" ? "研究简报"
-               : "任务结果"}
+                : parsed.type === "literature_review" ? "文献综述结果"
+                : parsed.type === "code_generation" ? "分析方案"
+                : parsed.type === "research_brief" ? "研究简报"
+                : parsed.type === "writing" ? "写作草稿"
+                : "任务结果"}
             </h2>
           </div>
           <div className={styles.sectionBody}>
-            {parsed.type === "data_mapping" && (
-              <DataMappingView mappings={parsed.mappings} />
-            )}
-            {parsed.type === "literature_review" && (
-              <LiteratureReviewView papers={parsed.papers} />
-            )}
-            {parsed.type === "code_generation" && (
-              <CodeGenerationView result={parsed} />
-            )}
-            {parsed.type === "research_brief" && (
-              <MarkdownView content={parsed.content} title={parsed.title} />
-            )}
-            {parsed.type === "unknown" && (
-              <UnknownView data={parsed.data} />
-            )}
+            {parsed.type === "data_mapping" && <DataMappingView result={parsed} />}
+            {parsed.type === "literature_review" && <LiteratureReviewView papers={parsed.papers} />}
+            {parsed.type === "code_generation" && <CodeGenerationView result={parsed} />}
+            {parsed.type === "research_brief" && <BriefView result={parsed} />}
+            {parsed.type === "writing" && <WritingView result={parsed} />}
+            {parsed.type === "unknown" && <UnknownView data={parsed.data} />}
           </div>
         </div>
       )}
 
-      {/* Interrupt data section */}
       {activeTab === "interrupt" && task.interrupt_data && (
         <div className={styles.section} role="tabpanel">
           <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-              中断数据
-            </h2>
-            {task.interrupt_reason && (
-              <span style={{ fontSize: "0.8125rem", color: "var(--color-warning)" }}>
-                {task.interrupt_reason}
-              </span>
-            )}
+            <h2 className={styles.sectionTitle}>中断数据</h2>
           </div>
           <div className={styles.sectionBody}>
-            <pre className={styles.codeContent} style={{ margin: 0 }}>
-              {JSON.stringify(task.interrupt_data, null, 2)}
-            </pre>
+            <InterruptDataView task={task} />
           </div>
         </div>
       )}

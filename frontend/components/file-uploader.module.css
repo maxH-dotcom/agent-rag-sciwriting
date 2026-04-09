@@ -148,6 +148,14 @@
   margin-top: 2px;
 }
 
+.filePath {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .fileRemove {
   display: flex;
   align-items: center;

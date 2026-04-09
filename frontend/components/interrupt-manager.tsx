@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { AnalysisPlanReview } from "./analysis-plan-review";
+import { BriefReview } from "./brief-review";
+import { DataMappingReview } from "./data-mapping-review";
+import { LiteratureReview } from "./literature-review";
+import { NoveltyReview } from "./novelty-review";
 import { useTaskStore } from "../lib/stores/task-store";
 import { TaskProgress } from "./task-progress";
 import sharedStyles from "./shared.module.css";
@@ -12,6 +17,7 @@ interface InterruptManagerProps {
 }
 
 export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps) {
+  const lastTerminalKeyRef = useRef<string | null>(null);
   const {
     currentTask,
     fetchTask,
@@ -29,6 +35,7 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
 
   useEffect(() => {
     if (!taskId) return;
+    lastTerminalKeyRef.current = null;
     fetchTask(taskId);
     connectStream(taskId);
     return () => {
@@ -38,7 +45,14 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
   }, [taskId, fetchTask, connectStream, disconnectStream, stopPolling]);
 
   useEffect(() => {
-    if (currentTask && ["done", "failed", "error", "aborted"].includes(currentTask.status)) {
+    if (!currentTask) return;
+
+    if (["done", "failed", "error", "aborted"].includes(currentTask.status)) {
+      const terminalKey = `${currentTask.task_id}:${currentTask.status}`;
+      if (lastTerminalKeyRef.current === terminalKey) {
+        return;
+      }
+      lastTerminalKeyRef.current = terminalKey;
       disconnectStream();
       stopPolling();
       onTaskUpdate?.();
@@ -48,6 +62,16 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
   async function handleContinue() {
     if (!taskId) return;
     await continueTask(taskId);
+  }
+
+  async function handleReject() {
+    if (!taskId) return;
+    await continueTask(taskId, { decision: "rejected", payload: {} });
+  }
+
+  async function handleDataMappingSubmit(payload: Record<string, unknown>) {
+    if (!taskId) return;
+    await continueTask(taskId, { decision: "modified", payload });
   }
 
   async function handleAbort() {
@@ -133,7 +157,57 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
       </dl>
 
       {/* ── Action buttons ───────────────────────── */}
-      {isInterrupted && (
+      {isInterrupted && currentTask.interrupt_reason === "data_mapping_required" && currentTask.interrupt_data && (
+        <DataMappingReview
+          interruptData={currentTask.interrupt_data}
+          loading={isLoading}
+          onApprove={handleContinue}
+          onSubmitModified={handleDataMappingSubmit}
+          onReject={handleReject}
+        />
+      )}
+
+      {isInterrupted && currentTask.interrupt_reason === "code_plan_ready" && currentTask.interrupt_data && (
+        <AnalysisPlanReview
+          interruptData={currentTask.interrupt_data}
+          loading={isLoading}
+          onApprove={handleContinue}
+          onSubmitModified={handleDataMappingSubmit}
+          onReject={handleReject}
+        />
+      )}
+
+      {isInterrupted && currentTask.interrupt_reason === "literature_review_required" && currentTask.interrupt_data && (
+        <LiteratureReview
+          interruptData={currentTask.interrupt_data}
+          loading={isLoading}
+          onApprove={handleContinue}
+          onSubmitModified={handleDataMappingSubmit}
+          onReject={handleReject}
+        />
+      )}
+
+      {isInterrupted && currentTask.interrupt_reason === "novelty_result_ready" && currentTask.interrupt_data && (
+        <NoveltyReview
+          interruptData={currentTask.interrupt_data}
+          loading={isLoading}
+          onApprove={handleContinue}
+          onSubmitModified={handleDataMappingSubmit}
+          onReject={handleReject}
+        />
+      )}
+
+      {isInterrupted && currentTask.interrupt_reason === "brief_ready_for_review" && currentTask.interrupt_data && (
+        <BriefReview
+          interruptData={currentTask.interrupt_data}
+          loading={isLoading}
+          onApprove={handleContinue}
+          onSubmitModified={handleDataMappingSubmit}
+          onReject={handleReject}
+        />
+      )}
+
+      {isInterrupted && !["data_mapping_required", "code_plan_ready", "literature_review_required", "novelty_result_ready", "brief_ready_for_review"].includes(currentTask.interrupt_reason || "") && (
         <div className={styles.actions}>
           <button
             onClick={handleContinue}
@@ -198,16 +272,6 @@ export function InterruptManager({ taskId, onTaskUpdate }: InterruptManagerProps
           </svg>
           {error || streamError}
         </div>
-      )}
-
-      {/* ── Interrupt data ───────────────────────── */}
-      {currentTask.interrupt_data && (
-        <>
-          <h3 className={styles.subheading}>中断数据</h3>
-          <pre className={sharedStyles.codeBlock}>
-            {JSON.stringify(currentTask.interrupt_data, null, 2)}
-          </pre>
-        </>
       )}
 
       {/* ── Result ──────────────────────────────── */}

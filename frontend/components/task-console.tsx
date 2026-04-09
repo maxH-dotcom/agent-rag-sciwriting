@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FileUploader, type UploadedFile } from "./file-uploader";
 import { InterruptManager } from "./interrupt-manager";
 import { TaskList } from "./task-list";
 import { useTaskStore } from "../lib/stores/task-store";
@@ -32,8 +33,8 @@ export function TaskConsole() {
   const [createdTaskId, setCreatedTaskId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [query, setQuery] = useState("我想分析农业产值对碳排放的影响，同时控制农药使用量");
-  const [dataFile, setDataFile] = useState("");
-  const [paperFile, setPaperFile] = useState("");
+  const [dataFiles, setDataFiles] = useState<UploadedFile[]>([]);
+  const [paperFiles, setPaperFiles] = useState<UploadedFile[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,8 +48,8 @@ export function TaskConsole() {
       const taskId = await createTask({
         task_type: "analysis",
         user_query: query,
-        data_files: dataFile ? [dataFile] : [],
-        paper_files: paperFile ? [paperFile] : [],
+        data_files: dataFiles.map((file) => file.path),
+        paper_files: paperFiles.map((file) => file.path),
       });
       setCreatedTaskId(taskId);
       setRefreshKey((v) => v + 1);
@@ -82,33 +83,39 @@ export function TaskConsole() {
 
           <div className={styles.fieldRow}>
             <div className={styles.field}>
-              <label htmlFor="dataFile" className={sharedStyles.label}>
-                数据文件路径（可选）
+              <label className={sharedStyles.label}>
+                数据文件（可选）
               </label>
-              <input
-                id="dataFile"
-                type="text"
-                value={dataFile}
-                onChange={(event) => setDataFile(event.target.value)}
-                placeholder="/absolute/path/to/data.csv"
-                className={sharedStyles.input}
+              <FileUploader
+                kind="data"
+                onChange={setDataFiles}
+                label="上传数据文件"
+                helperText="支持 .csv、.xlsx、.xls，上传后会自动写入任务请求"
               />
             </div>
 
             <div className={styles.field}>
-              <label htmlFor="paperFile" className={sharedStyles.label}>
-                参考论文路径（可选）
+              <label className={sharedStyles.label}>
+                参考材料（可选）
               </label>
-              <input
-                id="paperFile"
-                type="text"
-                value={paperFile}
-                onChange={(event) => setPaperFile(event.target.value)}
-                placeholder="/absolute/path/to/paper.pdf"
-                className={sharedStyles.input}
+              <FileUploader
+                kind="paper"
+                onChange={setPaperFiles}
+                label="上传论文或笔记"
+                helperText="支持 .pdf、.txt、.md，可同时上传多份材料"
               />
             </div>
           </div>
+
+          {(dataFiles.length > 0 || paperFiles.length > 0) && (
+            <div className={styles.uploadSummary}>
+              <p className={styles.uploadSummaryTitle}>本次任务将使用以下已上传文件</p>
+              <div className={styles.uploadSummaryStats}>
+                <span>数据文件 {dataFiles.length} 个</span>
+                <span>参考材料 {paperFiles.length} 个</span>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleCreateTask}

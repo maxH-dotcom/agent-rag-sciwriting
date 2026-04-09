@@ -327,6 +327,7 @@ class TestBridgeIntegration(unittest.TestCase):
         self.assertIn("bridge_status", ar)
         self.assertIn("code_script", ar)
         self.assertIn("execution_result", ar)
+        self.assertIn("result_summary", ar)
         self.assertIn("check_result", ar)
         self.assertEqual(result["status"], "interrupted")
         self.assertEqual(result["interrupt_reason"], "code_plan_ready")

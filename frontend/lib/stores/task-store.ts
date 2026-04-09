@@ -23,7 +23,13 @@ interface TaskState {
     data_files?: string[];
     paper_files?: string[];
   }): Promise<string>;
-  continueTask(id: string): Promise<void>;
+  continueTask(
+    id: string,
+    options?: {
+      decision?: "approved" | "modified" | "rejected";
+      payload?: Record<string, unknown>;
+    },
+  ): Promise<void>;
   abortTask(id: string): Promise<void>;
   connectStream(id: string): void;
   disconnectStream(): void;
@@ -104,13 +110,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
   },
 
-  continueTask: async (id: string) => {
+  continueTask: async (id, options) => {
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${id}/continue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision: "approved", payload: { source: "frontend" } }),
+        body: JSON.stringify({
+          decision: options?.decision ?? "approved",
+          payload: options?.payload ?? { source: "frontend" },
+        }),
       });
       if (!response.ok) throw new Error(`继续任务失败: ${response.status}`);
       const task: TaskPayload = await response.json();

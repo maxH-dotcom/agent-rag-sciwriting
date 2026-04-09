@@ -1,11 +1,9 @@
-/* ── Task Detail ─────────────────────────────────────────── */
 .container {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
 }
 
-/* ── Section ─────────────────────────────────────────────── */
 .section {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -27,20 +25,18 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.sectionTitle svg {
-  color: var(--color-accent);
 }
 
 .sectionBody {
   padding: var(--space-lg);
 }
 
-/* ── Result tabs ──────────────────────────────────────────── */
+.resultStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
 .tabBar {
   display: flex;
   gap: var(--space-xs);
@@ -77,15 +73,87 @@
   border-color: var(--color-border);
 }
 
-.tab svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
 }
 
-/* ── Data table ───────────────────────────────────────────── */
+.metricCard,
+.summaryCard {
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.metricLabel {
+  margin: 0 0 var(--space-xs);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.metricValue {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.summaryText {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.coefficientList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.coefficientItem {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.coefficientItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.coefficientName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.coefficientMeta {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  font-family: monospace;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.previewScroller {
+  overflow-x: auto;
+}
+
 .dataTable {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
@@ -109,15 +177,6 @@
   vertical-align: top;
 }
 
-.dataTable tr:last-child td {
-  border-bottom: none;
-}
-
-.dataTable tr:hover td {
-  background: rgba(56, 189, 248, 0.03);
-}
-
-/* ── Literature card ─────────────────────────────────────── */
 .litGrid {
   display: grid;
   gap: var(--space-md);
@@ -128,11 +187,6 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  transition: all var(--transition-normal);
-}
-
-.litCard:hover {
-  border-color: var(--color-accent);
 }
 
 .litTitle {
@@ -151,13 +205,17 @@
   margin-bottom: var(--space-sm);
 }
 
-.litBadge {
+.litBadge,
+.litBadge--highlight {
   font-size: 0.75rem;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--radius-full);
-  background: var(--color-surface);
   border: 1px solid var(--color-border);
+}
+
+.litBadge {
+  background: var(--color-surface);
   color: var(--color-text-secondary);
 }
 
@@ -171,13 +229,14 @@
   font-size: 0.8125rem;
   color: var(--color-text-secondary);
   line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-/* ── Code block ───────────────────────────────────────────── */
+.authorLine {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-sm);
+}
+
 .codeBlock {
   background: var(--color-muted);
   border: 1px solid var(--color-border);
@@ -192,6 +251,12 @@
   padding: var(--space-sm) var(--space-md);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  list-style: none;
+}
+
+.codeToolbar::-webkit-details-marker {
+  display: none;
 }
 
 .codeLang {
@@ -202,158 +267,53 @@
   font-family: monospace;
 }
 
+.codeHint {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
 .codeContent {
   padding: var(--space-lg);
   overflow-x: auto;
   font-size: 0.8125rem;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: "SF Mono", "Fira Code", monospace;
   line-height: 1.7;
   color: var(--color-text-primary);
-  white-space: pre;
+  white-space: pre-wrap;
 }
 
-/* ── Markdown ────────────────────────────────────────────── */
-.markdown {
-  font-family: var(--font-reading);
-  font-size: 1rem;
-  line-height: 1.8;
-  color: var(--color-text-primary);
-}
-
-.markdown h1,
-.markdown h2,
-.markdown h3 {
-  font-family: var(--font-reading);
-  margin-top: var(--space-xl);
-  margin-bottom: var(--space-md);
-}
-
-.markdown h1 { font-size: 1.75rem; }
-.markdown h2 { font-size: 1.375rem; }
-.markdown h3 { font-size: 1.125rem; }
-
-.markdown p {
-  margin-bottom: var(--space-md);
-}
-
-.markdown ul,
-.markdown ol {
-  margin-bottom: var(--space-md);
-  padding-left: var(--space-xl);
-}
-
-.markdown li {
-  margin-bottom: var(--space-xs);
-}
-
-.markdown blockquote {
-  border-left: 3px solid var(--color-accent);
-  padding-left: var(--space-md);
-  color: var(--color-text-secondary);
-  margin: var(--space-md) 0;
-}
-
-.markdown code {
-  background: var(--color-muted);
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  font-size: 0.875em;
-  font-family: monospace;
-  color: var(--color-accent);
-}
-
-.markdown pre {
-  background: var(--color-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  overflow-x: auto;
-  margin: var(--space-md) 0;
-}
-
-.markdown pre code {
-  background: transparent;
-  padding: 0;
-  color: var(--color-text-primary);
-}
-
-.markdown table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: var(--space-md) 0;
-  font-size: 0.875rem;
-}
-
-.markdown th,
-.markdown td {
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-border);
-  text-align: left;
-}
-
-.markdown th {
-  background: var(--color-muted);
-  font-weight: 700;
-  color: var(--color-text-secondary);
-}
-
-/* ── JSON collapsible ────────────────────────────────────── */
 .jsonToggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  gap: var(--space-xs);
   background: transparent;
-  border: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-accent);
+  padding: 8px 12px;
   cursor: pointer;
-  width: 100%;
-  text-align: left;
-  transition: color var(--transition-normal);
-}
-
-.jsonToggle:hover {
-  color: var(--color-text-primary);
-}
-
-.jsonToggle svg {
-  transition: transform var(--transition-normal);
-}
-
-.jsonToggle[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-
-.jsonContent {
-  padding: var(--space-md) var(--space-lg);
-  border-top: 1px solid var(--color-border);
-  overflow-x: auto;
 }
 
 .jsonContent pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
   font-size: 0.8125rem;
   font-family: monospace;
   color: var(--color-text-secondary);
-  white-space: pre;
-  margin: 0;
 }
 
-/* ── Empty ───────────────────────────────────────────────── */
 .empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  padding: var(--space-2xl);
   color: var(--color-text-muted);
-  text-align: center;
+  font-size: 0.875rem;
 }
 
-.empty svg {
-  width: 40px;
-  height: 40px;
-  opacity: 0.5;
+@media (max-width: 768px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .coefficientItem {
+    flex-direction: column;
+  }
 }

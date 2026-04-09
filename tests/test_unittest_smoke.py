@@ -118,6 +118,113 @@ class TaskStorePersistenceTest(unittest.TestCase):
             self.assertEqual(response["result"]["data_mapping_result"]["dependent_var"], "自定义因变量")
             self.assertEqual(response["history"][-1]["event"], "task_continued")
 
+    def test_modified_continue_updates_literature_selection(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store_path = Path(temp_dir) / "tasks.json"
+            store = TaskStore(
+                FileTaskRepository(store_path),
+                FileCheckpointRepository(Path(temp_dir) / "checkpoints.json"),
+            )
+            request = type(
+                "Req",
+                (),
+                {
+                    "task_type": "analysis",
+                    "user_query": "测试任务",
+                    "data_files": [],
+                    "paper_files": [],
+                },
+            )()
+            task = store.create_task(request)
+
+            store.continue_task(
+                task["task_id"],
+                type("Req", (), {"decision": "approved", "payload": {}})(),
+            )
+            literature_task = store.get_task(task["task_id"])
+            references = literature_task["result"]["literature_result"]["references"]
+
+            response = store.continue_task(
+                task["task_id"],
+                type(
+                    "Req",
+                    (),
+                    {
+                        "decision": "modified",
+                        "payload": {
+                            "references": references[:1],
+                            "selected_reference_ids": [references[0]["reference_id"]],
+                        },
+                    },
+                )(),
+            )
+
+            self.assertEqual(response["current_node"], "novelty")
+            self.assertEqual(len(response["result"]["literature_result"]["references"]), 1)
+            self.assertEqual(
+                response["result"]["literature_result"]["selected_reference_ids"],
+                [references[0]["reference_id"]],
+            )
+
+    def test_modified_continue_updates_novelty_result(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store_path = Path(temp_dir) / "tasks.json"
+            store = TaskStore(
+                FileTaskRepository(store_path),
+                FileCheckpointRepository(Path(temp_dir) / "checkpoints.json"),
+            )
+            request = type(
+                "Req",
+                (),
+                {
+                    "task_type": "analysis",
+                    "user_query": "测试任务",
+                    "data_files": [],
+                    "paper_files": [],
+                },
+            )()
+            task = store.create_task(request)
+
+            store.continue_task(
+                task["task_id"],
+                type("Req", (), {"decision": "approved", "payload": {}})(),
+            )
+            store.continue_task(
+                task["task_id"],
+                type("Req", (), {"decision": "approved", "payload": {}})(),
+            )
+
+            response = store.continue_task(
+                task["task_id"],
+                type(
+                    "Req",
+                    (),
+                    {
+                        "decision": "modified",
+                        "payload": {
+                            "recommended_direction": {
+                                "summary": "优先做更保守的固定效应验证。",
+                                "why": "先拿到稳定基线，再讨论扩展模型。",
+                            },
+                            "differentiation_points": [
+                                "人工保留关键审核节点",
+                                "先沉淀可复现基线流程",
+                            ],
+                        },
+                    },
+                )(),
+            )
+
+            self.assertEqual(response["current_node"], "analysis")
+            self.assertEqual(
+                response["result"]["novelty_result"]["recommended_direction"]["summary"],
+                "优先做更保守的固定效应验证。",
+            )
+            self.assertEqual(
+                response["result"]["novelty_result"]["differentiation_points"][0],
+                "人工保留关键审核节点",
+            )
+
     def test_abort_appends_history(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             store_path = Path(temp_dir) / "tasks.json"
